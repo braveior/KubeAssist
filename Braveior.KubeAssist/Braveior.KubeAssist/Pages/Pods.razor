@@ -1,0 +1,98 @@
+﻿@page "/pods"
+
+@using Braveior.KubeAssist.Services
+@using Braveior.KubeAssist.Services.Models
+@inject KubernetesService KubernetesService
+
+<MudTable Dense="true"  Items="@PodList" Hover="true" Breakpoint="Breakpoint.Sm">
+    @*<ColGroup>
+        <col style="width:300px;" />
+        <col style="width:100px;" />
+        <col />
+        <col style="width:100px;" />
+    </ColGroup>*@
+    <HeaderContent>
+        <MudTh></MudTh>
+        <MudTh>Name</MudTh>
+        <MudTh>UID</MudTh>
+        <MudTh>PodIP</MudTh>
+        <MudTh>StartTime</MudTh>
+        <MudTh>CreatedTime</MudTh>
+        <MudTh>Status</MudTh>
+        <MudTh>Readiness</MudTh>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd><MudButton Variant="Variant.Outlined" Size="Size.Small" OnClick="@(() => ShowBtnPress(context.UID))">@((context.ShowDetails == true)? "Hide" : "Show") Containers</MudButton></MudTd>
+        <MudTd DataLabel="Name">@context.Name</MudTd>
+        <MudTd DataLabel="UID">@context.UID</MudTd>
+        <MudTd DataLabel="PodIP">@context.PodIP</MudTd>
+        <MudTd DataLabel="StartTime">@context.StartTime</MudTd>
+        <MudTd DataLabel="CreatedTime">@context.CreatedTime</MudTd>
+        <MudTd DataLabel="Status">@context.Status</MudTd>
+        <MudTd DataLabel="Readiness">@context.Readiness</MudTd>
+    </RowTemplate>
+    <ChildRowContent>
+        @if (context.ShowDetails)
+        {
+            <MudTr>
+                <td colspan="4">
+                    <MudCard Elevation="0">
+                        <MudCardHeader>
+                            <CardHeaderContent>
+                                <MudText Typo="Typo.h6">Container Details for <strong>@context.Name</strong></MudText>
+                            </CardHeaderContent>
+                        </MudCardHeader>
+                        <MudCardContent Class="pa-0">
+                            <MudTable Items="@context.Containers" Context="ContainerContext" Hover="true" Breakpoint="Breakpoint.Sm" Elevation="0">
+                                @*<ColGroup>
+                                    <col />
+                                    <col />
+                                    <col style="width:200px;" />
+                                </ColGroup>*@
+                                <HeaderContent>
+                                    <MudTh>Name</MudTh>
+                                    <MudTh>Image</MudTh>
+                                    <MudTh>ContainerId</MudTh>
+                                    <MudTh>Status</MudTh>
+                                    <MudTh>Readiness</MudTh>
+                                    <MudTh>Restarts</MudTh>
+                                </HeaderContent>
+                                <RowTemplate>
+                                    <MudTd DataLabel="Name">@ContainerContext.Name</MudTd>
+                                    <MudTd DataLabel="Image">@ContainerContext.Image</MudTd>
+                                    <MudTd DataLabel="ContainerId">@ContainerContext.ContainerId</MudTd>
+                                    <MudTd DataLabel="Status">@ContainerContext.Status</MudTd>
+                                    <MudTd DataLabel="Readiness">@ContainerContext.Readiness</MudTd>
+                                    <MudTd DataLabel="Restarts">@ContainerContext.Restarts</MudTd>
+                                </RowTemplate>
+                            </MudTable>
+                        </MudCardContent>
+                    </MudCard>
+                </td>
+            </MudTr>}
+    </ChildRowContent>
+</MudTable>
+
+
+@code
+{
+
+    protected override void OnInitialized()
+    {
+        LoadPods();
+    }
+
+    private void LoadPods()
+    {
+        var kubeState = KubernetesService.GetKubeState();
+        PodList = kubeState.Pods;
+    }
+    private static IEnumerable<Pod> PodList { get; set; }
+
+    private void ShowBtnPress(string uid)
+    {
+        Pod pod = PodList.First(f => f.UID == uid);
+        pod.ShowDetails = !pod.ShowDetails;
+    }
+
+}

@@ -1,0 +1,41 @@
+﻿@page "/scs"
+
+@using Braveior.KubeAssist.Services
+@using Braveior.KubeAssist.Services.Models
+@inject KubernetesService KubernetesService
+
+<MudTable Dense="true"  Items="@SCList" Hover="true" Breakpoint="Breakpoint.Sm">
+    <HeaderContent>
+        <MudTh>Name</MudTh>
+        <MudTh>Provisioner</MudTh>
+        <MudTh>ReclaimPolicy</MudTh>
+        <MudTh>Volume Binding Mode</MudTh>
+        <MudTh>Created Date</MudTh>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd DataLabel="Name">@context.Name</MudTd>
+        <MudTd DataLabel="Provisioner">@context.Provisioner</MudTd>
+        <MudTd DataLabel="ReclaimPolicy">@context.ReclaimPolicy</MudTd>
+        <MudTd DataLabel="VolumeBindingMode">@context.VolumeBindingMode</MudTd>
+        <MudTd DataLabel="CreatedDate">@context.CreatedDate</MudTd>
+    </RowTemplate>
+ </MudTable>
+
+
+@code
+{
+
+    protected override void OnInitialized()
+    {
+        LoadStorageClasses();
+    }
+
+    private void LoadStorageClasses()
+    {
+        var kubeState = KubernetesService.GetKubeState();
+        SCList = kubeState.StorageClasses;
+    }
+    private static IEnumerable<StorageClass> SCList { get; set; }
+
+
+}

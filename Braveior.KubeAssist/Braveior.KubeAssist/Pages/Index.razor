@@ -5,22 +5,15 @@
 @inject KubernetesService KubernetesService
 
 
-<MudSelect T="string" Label="Namespaces" HelperText="Select Namespace" @bind-Value="SelectedNamespace">
-    @foreach (var knamespace in knamespaces)
-    {
-    <MudSelectItem T="string" Value="@knamespace.Name">@knamespace.Name</MudSelectItem>
-    }
-</MudSelect>
+
 
 @code
 {
-    private KNamespace[] knamespaces;
 
-    private string SelectedNamespace { get; set; }
 
     protected override void OnInitialized()
     {
-        knamespaces = KubernetesService.GetNamespaces().ToArray();
+
     }
 
 }

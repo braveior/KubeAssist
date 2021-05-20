@@ -1,0 +1,41 @@
+﻿@page "/deps"
+
+@using Braveior.KubeAssist.Services
+@using Braveior.KubeAssist.Services.Models
+@inject KubernetesService KubernetesService
+
+<MudTable Dense="true"  Items="@DeploymentList" Hover="true" Breakpoint="Breakpoint.Sm">
+    <HeaderContent>
+        <MudTh>Name</MudTh>
+        <MudTh>Namespace</MudTh>
+        <MudTh>Total Replicas</MudTh>
+        <MudTh>Available Replicas</MudTh>
+        <MudTh>Created Date</MudTh>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd DataLabel="Name">@context.Name</MudTd>
+        <MudTd DataLabel="Namespace">@context.Namespace</MudTd>
+        <MudTd DataLabel="TotalReplicas">@context.TotalReplicas</MudTd>
+        <MudTd DataLabel="AvailableReplicas">@context.AvailableReplicas</MudTd>
+        <MudTd DataLabel="CreatedDate">@context.CreatedDate</MudTd>
+    </RowTemplate>
+ </MudTable>
+
+
+@code
+{
+
+    protected override void OnInitialized()
+    {
+        LoadDeployments();
+    }
+
+    private void LoadDeployments()
+    {
+        var kubeState = KubernetesService.GetKubeState();
+        DeploymentList = kubeState.Deployments;
+    }
+    private static IEnumerable<Deployment> DeploymentList { get; set; }
+
+
+}

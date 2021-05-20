@@ -1,0 +1,39 @@
+﻿@page "/pvs"
+
+@using Braveior.KubeAssist.Services
+@using Braveior.KubeAssist.Services.Models
+@inject KubernetesService KubernetesService
+
+<MudTable Dense="true"  Items="@PVList" Hover="true" Breakpoint="Breakpoint.Sm">
+    <HeaderContent>
+        <MudTh>Name</MudTh>
+        <MudTh>Storage Class</MudTh>
+        <MudTh>Phase</MudTh>
+        <MudTh>Capacity</MudTh>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd DataLabel="Name">@context.Name</MudTd>
+        <MudTd DataLabel="StorageClass">@context.StorageClass</MudTd>
+        <MudTd DataLabel="Phase">@context.Phase</MudTd>
+        <MudTd DataLabel="Capacity">@context.Capacity</MudTd>
+    </RowTemplate>
+ </MudTable>
+
+
+@code
+{
+
+    protected override void OnInitialized()
+    {
+        LoadPersistenceVolumes();
+    }
+
+    private void LoadPersistenceVolumes()
+    {
+        var kubeState = KubernetesService.GetKubeState();
+        PVList = kubeState.PersistentVolumes;
+    }
+    private static IEnumerable<PersistentVolume> PVList { get; set; }
+
+
+}

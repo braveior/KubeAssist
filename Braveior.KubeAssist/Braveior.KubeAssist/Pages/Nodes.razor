@@ -1,0 +1,55 @@
+﻿@page "/nodes"
+
+@using Braveior.KubeAssist.Services
+@using Braveior.KubeAssist.Services.Models
+@inject KubernetesService KubernetesService
+
+<MudTable Dense="true"  Items="@NodesList" Hover="true" Breakpoint="Breakpoint.Sm">
+    <HeaderContent>
+        <MudTh>Name</MudTh>
+        <MudTh>Kernel Version</MudTh>
+        <MudTh>OS Image</MudTh>
+        <MudTh>Container Runtime Version</MudTh>
+        <MudTh>Kubelet Version</MudTh>
+        <MudTh>Kube Proxy Version</MudTh>
+        <MudTh>Created Date</MudTh>
+        <MudTh>Readiness</MudTh>
+        <MudTh>Memory</MudTh>
+        <MudTh>No of Pods</MudTh>
+        <MudTh>CPU Core</MudTh>
+        <MudTh>Storage</MudTh>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd DataLabel="Name">@context.Name</MudTd>
+        <MudTd DataLabel="KernelVersion">@context.KernalVersion</MudTd>
+        <MudTd DataLabel="OSImage">@context.OSImage</MudTd>
+        <MudTd DataLabel="ContainerRuntimeVersion">@context.containerRuntimeVersion</MudTd>
+        <MudTd DataLabel="KubeletVersion">@context.KubeletVersion</MudTd>
+        <MudTd DataLabel="KubeProxyVersion">@context.KubeProxyVersion</MudTd>
+        <MudTd DataLabel="CreatedDate">@context.CreatedDate</MudTd>
+        <MudTd DataLabel="Readiness">@context.Readiness</MudTd>
+        <MudTd DataLabel="Memory">@context.Memory</MudTd>
+        <MudTd DataLabel="NoOfPods">@context.NoOfPods</MudTd>
+        <MudTd DataLabel="CPUCore">@context.CPUCore</MudTd>
+        <MudTd DataLabel="Storage">@context.Storage</MudTd>
+    </RowTemplate>
+ </MudTable>
+
+
+@code
+{
+
+    protected override void OnInitialized()
+    {
+        LoadNodes();
+    }
+
+    private void LoadNodes()
+    {
+        var kubeState = KubernetesService.GetKubeState();
+        NodesList = kubeState.NodeDetails;
+    }
+    private static IEnumerable<Node> NodesList { get; set; }
+
+
+}

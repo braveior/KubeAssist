@@ -1,0 +1,45 @@
+﻿@page "/pvcs"
+
+@using Braveior.KubeAssist.Services
+@using Braveior.KubeAssist.Services.Models
+@inject KubernetesService KubernetesService
+
+<MudTable Dense="true" Items="@PVCList" Hover="true" Breakpoint="Breakpoint.Sm">
+    <HeaderContent>
+        <MudTh>Name</MudTh>
+        <MudTh>Namespace</MudTh>
+        <MudTh>StorageClass</MudTh>
+        <MudTh>Phase</MudTh>
+        <MudTh>Volume Name</MudTh>
+        <MudTh>Resource Requests Storage</MudTh>
+        <MudTh>Access Mode</MudTh>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd DataLabel="Name">@context.Name</MudTd>
+        <MudTd DataLabel="Namespace">@context.Namespace</MudTd>
+        <MudTd DataLabel="StorageClass">@context.StorageClass</MudTd>
+        <MudTd DataLabel="Phase">@context.Phase</MudTd>
+        <MudTd DataLabel="VolumeName">@context.VolumeName</MudTd>
+        <MudTd DataLabel="ResourceRequestsStorage">@context.ResourceRequestsStorage</MudTd>
+        <MudTd DataLabel="AccessMode">@context.AccessMode</MudTd>
+    </RowTemplate>
+</MudTable>
+
+
+@code
+{
+
+    protected override void OnInitialized()
+    {
+        LoadPersistenceVolumes();
+    }
+
+    private void LoadPersistenceVolumes()
+    {
+        var kubeState = KubernetesService.GetKubeState();
+        PVCList = kubeState.PersistentVolumeClaims;
+    }
+    private static IEnumerable<PersistentVolumeClaim> PVCList { get; set; }
+
+
+}
