@@ -5,13 +5,25 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="KubernetesClient" Version="5.0.1" />
+    <Compile Remove="Services\K8s.Modelsb\**" />
+    <Content Remove="Services\K8s.Modelsb\**" />
+    <EmbeddedResource Remove="Services\K8s.Modelsb\**" />
+    <None Remove="Services\K8s.Modelsb\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="BlazorMonacoYaml" Version="1.5.0" />
     <PackageReference Include="MudBlazor" Version="5.0.7" />
     <PackageReference Include="NEST" Version="7.12.1" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
   </ItemGroup>
 
   <ItemGroup>
     <Folder Include="wwwroot\images\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\KubernetesClient\KubernetesClient.csproj" />
   </ItemGroup>
 
 </Project>

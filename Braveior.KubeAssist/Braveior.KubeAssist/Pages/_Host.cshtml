@@ -17,6 +17,7 @@
     <link href="Braveior.KubeAssist.styles.css" rel="stylesheet" />
     <link href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700&display=swap" rel="stylesheet" />
     <link href="_content/MudBlazor/MudBlazor.min.css" rel="stylesheet" />
+    <link href="_content/BlazorMonacoYaml/lib/monaco-editor-yaml/min/vs/editor/editor.main.css" rel="stylesheet" />
 </head>
 <body>
     <component type="typeof(App)" render-mode="ServerPrerendered" />
@@ -31,6 +32,14 @@
         <a href="" class="reload">Reload</a>
         <a class="dismiss">🗙</a>
     </div>
+    <!--BlazorMonaco-->
+    <!--BlazorMonaco Yaml-->
+    <script src="_content/BlazorMonacoYaml/lib/monaco-editor-yaml/min/vs/loader.js"></script>
+    <script>require.config({ paths: { 'vs': '_content/BlazorMonacoYaml/lib/monaco-editor-yaml/min/vs' } });</script>
+    <script src="_content/BlazorMonacoYaml/lib/monaco-editor-yaml/min/vs/editor/editor.main.js"></script>
+    <!--/BlazorMonaco Yaml-->
+    <script src="_content/BlazorMonaco/jsInterop.js"></script>
+    <!--/BlazorMonaco-->
     <script src="_content/MudBlazor/MudBlazor.min.js"></script>
     <script src="_framework/blazor.server.js"></script>
 </body>

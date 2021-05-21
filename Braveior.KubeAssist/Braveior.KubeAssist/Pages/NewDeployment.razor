@@ -1,0 +1,47 @@
+﻿@page "/newdep"
+
+
+<MudTextField @bind-Value="Deployment.ApiVersion" Label="API Version" Variant="Variant.Text"></MudTextField>
+<MudTextField @bind-Value="Deployment.Kind" Label="Kind" Variant="Variant.Text"></MudTextField>
+<MudText Typo="Typo.h6">Metadata</MudText>
+<MudTextField @bind-Value="Deployment.Metadata.Name" Label="Name" Variant="Variant.Text"></MudTextField>
+<MudText Typo="Typo.h6">Spec</MudText>
+<MudTextField @bind-Value="Deployment.Spec.Replicas" Label="Replicas" Variant="Variant.Text"></MudTextField>
+<MudTextField @bind-Value="Deployment.Spec.RevisionHistoryLimit" Label="Revision History Limit" Variant="Variant.Text"></MudTextField>
+<MudText Typo="Typo.h6">Spec.Selector</MudText>
+<MudIconButton Icon="@Icons.Material.Filled.Add"  @onclick="AddSpecSelectorLabels"></MudIconButton>
+@*@foreach(var label in Deployment.Spec.Selector.MatchLabels)
+{
+    label.k
+}*@
+<MudText Typo="Typo.h6">Spec.Template</MudText>
+<MudText Typo="Typo.h6">Spec.Template.MetaData.Labels</MudText>
+<MudText Typo="Typo.h6">Spec.Template.Spec.Containers</MudText>
+
+
+
+
+
+@code
+{
+
+    private V1Deployment Deployment { get; set; } = new V1Deployment();
+
+    protected override async Task OnInitializedAsync()
+    {
+        Deployment.Metadata = new V1ObjectMeta();
+        Deployment.Spec = new V1DeploymentSpec();
+        Deployment.Spec.Selector = new V1LabelSelector();
+        Deployment.Spec.Selector.MatchLabels = new Dictionary<string, string>();
+        Deployment.Spec.Template = new V1PodTemplateSpec();
+        Deployment.Spec.Template.Metadata = new V1ObjectMeta();
+        Deployment.Spec.Template.Metadata.Labels = new Dictionary<string, string>();
+        Deployment.Spec.Template.Spec = new V1PodSpec();
+        Deployment.Spec.Template.Spec.Containers = new List<V1Container>();
+
+    }
+    private void AddSpecSelectorLabels()
+    {
+        Deployment.Spec.Selector.MatchLabels.Add(new KeyValuePair<string, string>("", ""));
+    }
+}
