@@ -27,5 +27,21 @@ namespace Braveior.KubeAssist.Services
             return searchResponse.Documents.FirstOrDefault();
         }
 
+        public ClusterMetric GetLatestClusterMetric()
+        {
+            var settings = new ConnectionSettings(new Uri("http://192.168.0.112:9200/"))
+           .DefaultIndex("kubeclustermetric");
+            var client = new ElasticClient(settings);
+            // var asyncIndexResponse = await client.IndexDocumentAsync(kubeState);
+
+            var searchResponse = client.Search<ClusterMetric>(s => s
+            .From(0)
+            .Size(1)
+            .Query(q => q.MatchAll())
+            .Sort(s => s.Descending(a => a.TimeStamp)));
+
+            return searchResponse.Documents.FirstOrDefault();
+        }
+
     }
 }

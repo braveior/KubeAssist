@@ -1,0 +1,357 @@
+﻿@page "/dashboard"
+@using System.Text;
+@using ChartJs.Blazor.PieChart
+@using System.Drawing
+
+@using Braveior.KubeAssist.Services
+@using Braveior.KubeAssist.Services.Models
+@inject KubernetesService KubernetesService
+
+
+
+
+<MudGrid>
+    <MudItem lg="12">
+        <MudButtonGroup Color="MudBlazor.Color.Primary" Variant="Variant.Outlined">
+            <MudButton @onclick="GenerteMonthNSChart">Month</MudButton>
+            <MudButton @onclick="GenerteWeekNSChart">Week</MudButton>
+            <MudButton @onclick="GenerteDayNSChart">Day</MudButton>
+        </MudButtonGroup>
+    </MudItem>
+    <MudItem lg="6">
+        <MudPaper Class="mt-16" Elevation="3">
+            <Chart Config="configNSCPU"></Chart>
+        </MudPaper>
+    </MudItem>
+    <MudItem lg="6">
+        <MudPaper Class="mt-16" Elevation="3">
+            <Chart Config="configNSMemory"></Chart>
+        </MudPaper>
+    </MudItem>
+    <MudItem lg="6">
+
+        <MudPaper Class="mt-16" Elevation="3">
+            <Chart Config="configClusterCPU"></Chart>
+        </MudPaper>
+    </MudItem>
+    <MudItem lg="6">
+        <MudPaper Class="mt-16" Elevation="3">
+            <Chart Config="configClusterMemory"></Chart>
+        </MudPaper>
+    </MudItem>
+</MudGrid>
+
+
+
+@code
+{
+
+
+
+
+
+    private LineConfig configNSCPU;
+
+    private LineConfig configNSMemory;
+
+    private PieConfig configClusterCPU;
+
+    private PieConfig configClusterMemory;
+
+    Queue<System.Drawing.Color> SysColors { get; set; } = new Queue<System.Drawing.Color>();
+
+    List<string> Namespaces = new List<string>() { "default", "NamespaceA" };
+    List<NamespaceMetric> NamespaceMetrics = new List<NamespaceMetric>();
+
+    private void BuildSysColorsQueue()
+    {
+        SysColors.Enqueue(System.Drawing.Color.Red);
+        SysColors.Enqueue(System.Drawing.Color.Blue);
+        SysColors.Enqueue(System.Drawing.Color.Green);
+        SysColors.Enqueue(System.Drawing.Color.Orange);
+        SysColors.Enqueue(System.Drawing.Color.Violet);
+        SysColors.Enqueue(System.Drawing.Color.Black);
+        SysColors.Enqueue(System.Drawing.Color.Aqua);
+        SysColors.Enqueue(System.Drawing.Color.Chocolate);
+        SysColors.Enqueue(System.Drawing.Color.Turquoise);
+    }
+    protected override void OnInitialized()
+    {
+        BuildSysColorsQueue();
+        configNSCPU = GetLineChartConfigNSCPU();
+        configNSMemory = GetLineChartConfigNSMemory();
+        configClusterCPU = GetPieChartConfigClusterCPU();
+        configClusterMemory = GetPieChartConfigClusterMemory();
+        GenerateNamespaceCharts("7");
+        GenerateClusterPieCharts();
+    }
+
+    private System.Drawing.Color GetNextSystemColor()
+    {
+        var color = SysColors.Dequeue();
+        SysColors.Enqueue(color);
+        return color;
+    }
+    private void GenerteMonthNSChart()
+    {
+        GenerateNamespaceCharts("30");
+    }
+    private void GenerteWeekNSChart()
+    {
+        GenerateNamespaceCharts("7");
+    }
+    private void GenerteDayNSChart()
+    {
+        GenerateNamespaceCharts("2");
+    }
+    private void GenerateNamespaceCharts(string day)
+    {
+        configNSCPU.Data.Datasets.Clear();
+        configNSMemory.Data.Datasets.Clear();
+        var settings = new ConnectionConfiguration(new Uri("http://192.168.0.112:9200"))
+        .RequestTimeout(TimeSpan.FromMinutes(2));
+        var lc = new ElasticLowLevelClient(settings);
+        var namespaceMetricsQueryTemplate = @"{
+                        ""query"": {
+                        ""bool"": {
+                        ""filter"": [{
+                            ""term"": { ""name.keyword"": ""#NAMESPACE#"" }
+                        },
+                        {
+                            ""range"": {
+                                    ""timeStamp"": {
+                                    ""gte"": ""now-#DAYS#d/d"",
+                                    ""lt"": ""now/d""
+                                }
+                            }
+                            }
+                                ]
+                                }
+                                },
+                                ""aggs"": {
+                                ""sales_over_time"": {
+                                ""date_histogram"": {
+                                ""field"": ""timeStamp"",
+                                ""calendar_interval"": ""day""
+                                },
+                                ""aggs"" : {
+                                ""avg_cpu"" : {
+                                ""avg"": {
+                                ""field"": ""cPU""
+                                }
+                                },
+                                ""avg_ram"" : {
+                                ""avg"": {
+                                ""field"": ""memory""
+                                }
+                                }
+                                }
+                                }
+                                }
+                                }";
+
+        foreach (var ns in Namespaces)
+        {
+            var searchResponse = lc.Search<BytesResponse>
+    ("kubensmetric", namespaceMetricsQueryTemplate.Replace("#NAMESPACE#", ns).Replace("#DAYS#", day)).Body;
+            string utfString = Encoding.UTF8.GetString(searchResponse, 0, searchResponse.Length);
+            var metricResult = JsonConvert.DeserializeObject<MetricResult>
+                (utfString);
+
+            var datasetCpu = new LineDataset<double>
+                ()
+            {
+                Label = ns,
+                BackgroundColor = ColorUtil.FromDrawingColor(System.Drawing.Color.FromArgb(128, GetNextSystemColor())),
+                BorderColor = ColorUtil.FromDrawingColor(GetNextSystemColor()),
+                BorderWidth = 1,
+                Fill = FillingMode.Disabled
+            };
+            var datasetMemory = new LineDataset<double>
+                ()
+            {
+                Label = ns,
+                BackgroundColor = ColorUtil.FromDrawingColor(System.Drawing.Color.FromArgb(128, GetNextSystemColor())),
+                BorderColor = ColorUtil.FromDrawingColor(GetNextSystemColor()),
+                BorderWidth = 1,
+                Fill = FillingMode.Disabled
+            };
+            var metrics = metricResult.aggregations.sales_over_time.buckets;
+            configNSCPU.Data.Labels.Clear();
+            configNSMemory.Data.Labels.Clear();
+            foreach (var metric in metrics)
+            {
+                datasetCpu.Add(metric.avg_cpu.value);
+                datasetMemory.Add(metric.avg_ram.value);
+                configNSCPU.Data.Labels.Add(metric.key_as_string.ToShortDateString());
+                configNSMemory.Data.Labels.Add(metric.key_as_string.ToShortDateString());
+            }
+            configNSCPU.Data.Datasets.Add(datasetCpu);
+            configNSMemory.Data.Datasets.Add(datasetMemory);
+        }
+    }
+
+    private void GenerateClusterPieCharts()
+    {
+        configClusterCPU = GetPieChartConfigClusterCPU();
+        configClusterMemory = GetPieChartConfigClusterMemory();
+        var kubeState = KubernetesService.GetKubeState();
+        long clusterCPU=0;
+        long clusterMemory=0;
+        foreach (var node in kubeState.NodeDetails)
+        {
+            clusterCPU += long.Parse(node.CPUCore)*1000;
+            clusterMemory += long.Parse(node.Memory);
+        }
+        var clusterMetric = KubernetesService.GetLatestClusterMetric();
+
+        configClusterCPU.Data.Labels.Add("Remaining");
+        configClusterCPU.Data.Labels.Add("Used");
+        PieDataset<long> datasetClusterCPU = new PieDataset<long>(new[] { clusterCPU - clusterMetric.CPU, clusterMetric.CPU }) {
+            BackgroundColor = new[]
+        {
+            ColorUtil.FromDrawingColor(System.Drawing.Color.FromArgb(128, GetNextSystemColor())), // Slice 1 aka "Red"
+            ColorUtil.FromDrawingColor(System.Drawing.Color.FromArgb(128, GetNextSystemColor())), // Slice 2 aka "Yellow"
+         
+        }
+        };
+        configClusterCPU.Data.Datasets.Add(datasetClusterCPU);
+
+        configClusterMemory.Data.Labels.Add("Remaining");
+        configClusterMemory.Data.Labels.Add("Used");
+        PieDataset<long> datasetClusterMemory = new PieDataset<long>(new[] { clusterMemory - clusterMetric.Memory, clusterMetric.Memory })
+        {
+            BackgroundColor = new[]
+        {
+           ColorUtil.FromDrawingColor(System.Drawing.Color.FromArgb(128, GetNextSystemColor())), // Slice 1 aka "Red"
+            ColorUtil.FromDrawingColor(System.Drawing.Color.FromArgb(128, GetNextSystemColor())), // Slice 2 aka "Yellow"
+         
+        }
+        };
+        configClusterMemory.Data.Datasets.Add(datasetClusterMemory);
+    }
+    private LineConfig GetLineChartConfigNSCPU()
+    {
+
+        var config = new LineConfig()
+        {
+            Options = new LineOptions
+            {
+                Responsive = true,
+                Legend = new Legend
+                {
+                    Position = ChartJs.Blazor.Common.Enums.Position.Top
+
+                },
+                Title = new OptionsTitle
+                {
+                    Display = true,
+                    Text = "Namespaces CPU Trend"
+                },
+                Scales = new Scales
+                {
+                    XAxes = new List<CartesianAxis>
+        {
+                    new CategoryAxis
+                    {
+                    ScaleLabel = new ScaleLabel
+                    {
+                    LabelString = "Day"
+                    }
+                    }
+                    },
+                    YAxes = new List<CartesianAxis>
+            {
+                        new LinearCartesianAxis
+                        {
+                        ScaleLabel = new ScaleLabel
+                        {
+                        LabelString = "Value"
+                        }
+                        }
+                        }
+                }
+            }
+        };
+        return config;
+    }
+    private LineConfig GetLineChartConfigNSMemory()
+    {
+
+        var config = new LineConfig()
+        {
+            Options = new LineOptions
+            {
+                Responsive = true,
+                Legend = new Legend
+                {
+                    Position = ChartJs.Blazor.Common.Enums.Position.Top
+
+                },
+                Title = new OptionsTitle
+                {
+                    Display = true,
+                    Text = "Namespaces Memory Trend"
+                },
+                Scales = new Scales
+                {
+                    XAxes = new List<CartesianAxis>
+                {
+                            new CategoryAxis
+                            {
+                            ScaleLabel = new ScaleLabel
+                            {
+                            LabelString = "Day"
+                            }
+                            }
+                            },
+                    YAxes = new List<CartesianAxis>
+                    {
+                                new LinearCartesianAxis
+                                {
+                                ScaleLabel = new ScaleLabel
+                                {
+                                LabelString = "Value"
+                                }
+                                }
+                                }
+                }
+            }
+        };
+        return config;
+    }
+
+    private PieConfig GetPieChartConfigClusterCPU()
+    {
+        var config = new PieConfig
+        {
+            Options = new PieOptions
+            {
+                Responsive = true,
+                Title = new OptionsTitle
+                {
+                    Display = true,
+                    Text = "Cluster CPU"
+                }
+            }
+        };
+        return config;
+    }
+    private PieConfig GetPieChartConfigClusterMemory()
+    {
+        var config = new PieConfig
+        {
+            Options = new PieOptions
+            {
+                Responsive = true,
+                Title = new OptionsTitle
+                {
+                    Display = true,
+                    Text = "Cluster Memory"
+                }
+            }
+        };
+        return config;
+    }
+
+}

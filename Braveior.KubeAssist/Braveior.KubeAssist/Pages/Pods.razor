@@ -22,7 +22,7 @@
         <MudTh>Readiness</MudTh>
     </HeaderContent>
     <RowTemplate>
-        <MudTd><MudButton Variant="Variant.Outlined" Size="Size.Small" OnClick="@(() => ShowBtnPress(context.UID))">@((context.ShowDetails == true)? "Hide" : "Show") Containers</MudButton></MudTd>
+        <MudTd><MudButton Variant="Variant.Outlined" Size="MudBlazor.Size.Small" OnClick="@(() => ShowBtnPress(context.UID))">@((context.ShowDetails == true)? "Hide" : "Show") Containers</MudButton></MudTd>
         <MudTd DataLabel="Name">@context.Name</MudTd>
         <MudTd DataLabel="UID">@context.UID</MudTd>
         <MudTd DataLabel="PodIP">@context.PodIP</MudTd>

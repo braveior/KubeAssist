@@ -7,7 +7,7 @@ namespace Braveior.KubeAssist.Services.Models
 {
     public class KubeState
     {
-        public List<Node> NodeDetails { get; set; } = new List<Node>();
+        public List<KNode> NodeDetails { get; set; } = new List<KNode>();
 
         public List<KubeStateElement> KubeStateElements { get; set; } = new List<KubeStateElement>();
 

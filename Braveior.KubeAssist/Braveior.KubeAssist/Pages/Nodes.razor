@@ -49,7 +49,7 @@
         var kubeState = KubernetesService.GetKubeState();
         NodesList = kubeState.NodeDetails;
     }
-    private static IEnumerable<Node> NodesList { get; set; }
+    private static IEnumerable<KNode> NodesList { get; set; }
 
 
 }

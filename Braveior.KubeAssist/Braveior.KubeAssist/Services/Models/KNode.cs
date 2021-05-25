@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 
 namespace Braveior.KubeAssist.Services.Models
 {
-    public class Node
+    public class KNode
     {
         public string Name { get; set; }
         public string KernalVersion { get; set; }
