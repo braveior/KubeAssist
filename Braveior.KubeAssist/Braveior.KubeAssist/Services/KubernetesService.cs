@@ -4,6 +4,7 @@ using k8s.Models;
 using Nest;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -42,6 +43,15 @@ namespace Braveior.KubeAssist.Services
 
             return searchResponse.Documents.FirstOrDefault();
         }
-
+        public async Task<string> GetPodLogs(string name, string ns)
+        {
+            var config = KubernetesClientConfiguration.BuildConfigFromConfigFile();
+            IKubernetes client = new Kubernetes(config);
+            var response = await client.ReadNamespacedPodLogWithHttpMessagesAsync(name, ns, follow: true).ConfigureAwait(false);
+            var stream = response.Body;
+            StreamReader reader = new StreamReader(stream);
+            string log = reader.ReadToEnd();
+            return log;
+        }
     }
 }

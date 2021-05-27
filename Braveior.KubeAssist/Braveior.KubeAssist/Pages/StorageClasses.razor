@@ -24,16 +24,22 @@
 
 @code
 {
+        [Inject]
+        private IState<KubeStateState> KubeStateState { get; set; }
 
     protected override void OnInitialized()
     {
         LoadStorageClasses();
+        base.OnInitialized();
     }
 
     private void LoadStorageClasses()
     {
-        var kubeState = KubernetesService.GetKubeState();
-        SCList = kubeState.StorageClasses;
+        if (KubeStateState.Value.KubeState != null)
+        {
+            
+            SCList = KubeStateState.Value.KubeState.StorageClasses;
+        }
     }
     private static IEnumerable<StorageClass> SCList { get; set; }
 

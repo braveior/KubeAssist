@@ -1,4 +1,6 @@
-﻿@page "/dashboard"
+﻿@page "/"
+
+@namespace Braveior.KubeAssist.Pages
 @using System.Text;
 @using ChartJs.Blazor.PieChart
 @using System.Drawing
@@ -6,8 +8,8 @@
 @using Braveior.KubeAssist.Services
 @using Braveior.KubeAssist.Services.Models
 @inject KubernetesService KubernetesService
-
-
+@inherits Fluxor.Blazor.Web.Components.FluxorComponent
+@inject IDialogService DialogService
 
 
 <MudGrid>
@@ -28,19 +30,48 @@
             <Chart Config="configNSMemory"></Chart>
         </MudPaper>
     </MudItem>
-    <MudItem lg="6">
+    <MudItem lg="4">
 
         <MudPaper Class="mt-16" Elevation="3">
             <Chart Config="configClusterCPU"></Chart>
         </MudPaper>
     </MudItem>
-    <MudItem lg="6">
+    <MudItem lg="4">
         <MudPaper Class="mt-16" Elevation="3">
             <Chart Config="configClusterMemory"></Chart>
         </MudPaper>
     </MudItem>
+    <MudItem lg="4">
+        <MudPaper Class="mt-16" Elevation="3">
+            <Chart Config="configClusterPods"></Chart>
+        </MudPaper>
+    </MudItem>
+    <MudItem lg="12">
+        <MudTable Dense="true" Items="@PodList" Hover="true" Breakpoint="Breakpoint.Sm">
+            <HeaderContent>
+                <MudTh>Name</MudTh>
+                <MudTh>UID</MudTh>
+                <MudTh>StartTime</MudTh>
+                <MudTh>CreatedTime</MudTh>
+                <MudTh>Status</MudTh>
+                <MudTh>Readiness</MudTh>
+                <MudTh>Logs</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="Name">@context.Name</MudTd>
+                <MudTd DataLabel="UID">@context.UID</MudTd>
+                <MudTd DataLabel="StartTime">@context.StartTime</MudTd>
+                <MudTd DataLabel="CreatedTime">@context.CreatedTime</MudTd>
+                <MudTd DataLabel="Status">@context.Status</MudTd>
+                <MudTd DataLabel="Readiness">@context.Readiness</MudTd>
+                <MudTd><MudButton Variant="Variant.Outlined" Size="MudBlazor.Size.Small" OnClick="@(() => ViewLogs(context.Name,context.Namespace))">Logs</MudButton></MudTd>
+            </RowTemplate>
+        </MudTable>
+    </MudItem>
 </MudGrid>
-
+<MudOverlay @bind-visible="isVisible" DarkBackground="true">
+    <MudProgressCircular Color="MudBlazor.Color.Secondary" Indeterminate="true" />
+</MudOverlay>
 
 
 @code
@@ -58,10 +89,24 @@
 
     private PieConfig configClusterMemory;
 
+    private PieConfig configClusterPods;
+
+    private bool isVisible = true;
+
+    [Inject]
+    private IState<KubeStateState> KubeStateState { get; set; }
+
+    [Inject]
+    private IDispatcher Dispatcher { get; set; }
+
     Queue<System.Drawing.Color> SysColors { get; set; } = new Queue<System.Drawing.Color>();
 
     List<string> Namespaces = new List<string>() { "default", "NamespaceA" };
     List<NamespaceMetric> NamespaceMetrics = new List<NamespaceMetric>();
+
+    private static IEnumerable<Pod> PodList { get; set; }
+
+    private static KubeState KubeState { get; set; }
 
     private void BuildSysColorsQueue()
     {
@@ -77,13 +122,32 @@
     }
     protected override void OnInitialized()
     {
+        //ToggleOverlay(true);
+
+        if (KubeStateState.Value.KubeState != null)
+        {
+            KubeState = KubeStateState.Value.KubeState;
+        }
+        else
+        {
+            var kubeState = KubernetesService.GetKubeState();
+            KubeState = kubeState;
+            Dispatcher.Dispatch(new KubeFetchDataAction(KubeState));
+        }
         BuildSysColorsQueue();
-        configNSCPU = GetLineChartConfigNSCPU();
-        configNSMemory = GetLineChartConfigNSMemory();
-        configClusterCPU = GetPieChartConfigClusterCPU();
-        configClusterMemory = GetPieChartConfigClusterMemory();
+        configNSCPU = GetLineChartConfig("Namespace CPU Trend");
+        configNSMemory = GetLineChartConfig("Namespace Memory Trend");
+        configClusterCPU = GetPieChartConfig("Cluster CPU");
+        configClusterMemory = GetPieChartConfig("Cluster Memory");
+
         GenerateNamespaceCharts("7");
-        GenerateClusterPieCharts();
+        GenerateClusterPieCharts(KubeState);
+        LoadPods(KubeState);
+        base.OnInitialized();
+        ToggleOverlay(false);
+
+
+        //ToggleOverlay(false);
     }
 
     private System.Drawing.Color GetNextSystemColor()
@@ -112,51 +176,50 @@
         .RequestTimeout(TimeSpan.FromMinutes(2));
         var lc = new ElasticLowLevelClient(settings);
         var namespaceMetricsQueryTemplate = @"{
-                        ""query"": {
-                        ""bool"": {
-                        ""filter"": [{
-                            ""term"": { ""name.keyword"": ""#NAMESPACE#"" }
-                        },
-                        {
-                            ""range"": {
-                                    ""timeStamp"": {
-                                    ""gte"": ""now-#DAYS#d/d"",
-                                    ""lt"": ""now/d""
-                                }
-                            }
-                            }
-                                ]
-                                }
-                                },
-                                ""aggs"": {
-                                ""sales_over_time"": {
-                                ""date_histogram"": {
-                                ""field"": ""timeStamp"",
-                                ""calendar_interval"": ""day""
-                                },
-                                ""aggs"" : {
-                                ""avg_cpu"" : {
-                                ""avg"": {
-                                ""field"": ""cPU""
-                                }
-                                },
-                                ""avg_ram"" : {
-                                ""avg"": {
-                                ""field"": ""memory""
-                                }
-                                }
-                                }
-                                }
-                                }
-                                }";
+        ""query"": {
+        ""bool"": {
+        ""filter"": [{
+            ""term"": { ""name.keyword"": ""#NAMESPACE#"" }
+        },
+        {
+            ""range"": {
+                    ""timeStamp"": {
+                    ""gte"": ""now-#DAYS#d/d"",
+                    ""lt"": ""now/d""
+                }
+            }
+            }
+                ]
+                }
+                },
+                ""aggs"": {
+                ""sales_over_time"": {
+                ""date_histogram"": {
+                ""field"": ""timeStamp"",
+                ""calendar_interval"": ""day""
+                },
+                ""aggs"" : {
+                ""avg_cpu"" : {
+                ""avg"": {
+                ""field"": ""cPU""
+                }
+                },
+                ""avg_ram"" : {
+                ""avg"": {
+                ""field"": ""memory""
+                }
+                }
+                }
+                }
+                }
+                }";
 
         foreach (var ns in Namespaces)
         {
             var searchResponse = lc.Search<BytesResponse>
-    ("kubensmetric", namespaceMetricsQueryTemplate.Replace("#NAMESPACE#", ns).Replace("#DAYS#", day)).Body;
+            ("kubensmetric", namespaceMetricsQueryTemplate.Replace("#NAMESPACE#", ns).Replace("#DAYS#", day)).Body;
             string utfString = Encoding.UTF8.GetString(searchResponse, 0, searchResponse.Length);
-            var metricResult = JsonConvert.DeserializeObject<MetricResult>
-                (utfString);
+            var metricResult = JsonConvert.DeserializeObject<MetricResult>(utfString);
 
             var datasetCpu = new LineDataset<double>
                 ()
@@ -191,31 +254,39 @@
         }
     }
 
-    private void GenerateClusterPieCharts()
+    private void GenerateClusterPieCharts(KubeState kubeState)
     {
-        configClusterCPU = GetPieChartConfigClusterCPU();
-        configClusterMemory = GetPieChartConfigClusterMemory();
-        var kubeState = KubernetesService.GetKubeState();
-        long clusterCPU=0;
-        long clusterMemory=0;
+        configClusterCPU = GetPieChartConfig("Cluster CPU");
+        configClusterMemory = GetPieChartConfig("Cluster Memory");
+        configClusterPods = GetPieChartConfig("Cluster Pods");
+        DrawAvailableClusterCPUMemoryPieChart(kubeState);
+        DrawAvailableClusterPodsPieChart(kubeState);
+
+    }
+    private void DrawAvailableClusterCPUMemoryPieChart(KubeState kubeState)
+    {
+        long clusterCPU = 0;
+        long clusterMemory = 0;
         foreach (var node in kubeState.NodeDetails)
         {
-            clusterCPU += long.Parse(node.CPUCore)*1000;
+            clusterCPU += long.Parse(node.CPUCore) * 1000;
             clusterMemory += long.Parse(node.Memory);
         }
         var clusterMetric = KubernetesService.GetLatestClusterMetric();
 
         configClusterCPU.Data.Labels.Add("Remaining");
         configClusterCPU.Data.Labels.Add("Used");
-        PieDataset<long> datasetClusterCPU = new PieDataset<long>(new[] { clusterCPU - clusterMetric.CPU, clusterMetric.CPU }) {
+        PieDataset<long> datasetClusterCPU = new PieDataset<long>(new[] { clusterCPU - clusterMetric.CPU, clusterMetric.CPU })
+        {
             BackgroundColor = new[]
         {
             ColorUtil.FromDrawingColor(System.Drawing.Color.FromArgb(128, GetNextSystemColor())), // Slice 1 aka "Red"
             ColorUtil.FromDrawingColor(System.Drawing.Color.FromArgb(128, GetNextSystemColor())), // Slice 2 aka "Yellow"
-         
+
         }
         };
         configClusterCPU.Data.Datasets.Add(datasetClusterCPU);
+
 
         configClusterMemory.Data.Labels.Add("Remaining");
         configClusterMemory.Data.Labels.Add("Used");
@@ -225,12 +296,36 @@
         {
            ColorUtil.FromDrawingColor(System.Drawing.Color.FromArgb(128, GetNextSystemColor())), // Slice 1 aka "Red"
             ColorUtil.FromDrawingColor(System.Drawing.Color.FromArgb(128, GetNextSystemColor())), // Slice 2 aka "Yellow"
-         
+
         }
         };
         configClusterMemory.Data.Datasets.Add(datasetClusterMemory);
     }
-    private LineConfig GetLineChartConfigNSCPU()
+    private void DrawAvailableClusterPodsPieChart(KubeState kubeState)
+    {
+        configClusterPods.Data.Labels.Add("Remaining");
+        configClusterPods.Data.Labels.Add("Used");
+
+        int totalAvailablePods = 0;
+        foreach (var node in kubeState.NodeDetails)
+        {
+            totalAvailablePods += int.Parse(node.NoOfPods);
+        }
+        int runningPods = kubeState.Pods.Count;
+
+        PieDataset<int> datasetClusterPods = new PieDataset<int>(new[] { totalAvailablePods - runningPods, runningPods })
+        {
+            BackgroundColor = new[]
+{
+           ColorUtil.FromDrawingColor(System.Drawing.Color.FromArgb(128, GetNextSystemColor())), // Slice 1 aka "Red"
+            ColorUtil.FromDrawingColor(System.Drawing.Color.FromArgb(128, GetNextSystemColor())), // Slice 2 aka "Yellow"
+
+        }
+        };
+        configClusterPods.Data.Datasets.Add(datasetClusterPods);
+    }
+
+    private LineConfig GetLineChartConfig(string header)
     {
 
         var config = new LineConfig()
@@ -246,12 +341,12 @@
                 Title = new OptionsTitle
                 {
                     Display = true,
-                    Text = "Namespaces CPU Trend"
+                    Text = header
                 },
                 Scales = new Scales
                 {
                     XAxes = new List<CartesianAxis>
-        {
+{
                     new CategoryAxis
                     {
                     ScaleLabel = new ScaleLabel
@@ -261,7 +356,7 @@
                     }
                     },
                     YAxes = new List<CartesianAxis>
-            {
+{
                         new LinearCartesianAxis
                         {
                         ScaleLabel = new ScaleLabel
@@ -275,53 +370,8 @@
         };
         return config;
     }
-    private LineConfig GetLineChartConfigNSMemory()
-    {
 
-        var config = new LineConfig()
-        {
-            Options = new LineOptions
-            {
-                Responsive = true,
-                Legend = new Legend
-                {
-                    Position = ChartJs.Blazor.Common.Enums.Position.Top
-
-                },
-                Title = new OptionsTitle
-                {
-                    Display = true,
-                    Text = "Namespaces Memory Trend"
-                },
-                Scales = new Scales
-                {
-                    XAxes = new List<CartesianAxis>
-                {
-                            new CategoryAxis
-                            {
-                            ScaleLabel = new ScaleLabel
-                            {
-                            LabelString = "Day"
-                            }
-                            }
-                            },
-                    YAxes = new List<CartesianAxis>
-                    {
-                                new LinearCartesianAxis
-                                {
-                                ScaleLabel = new ScaleLabel
-                                {
-                                LabelString = "Value"
-                                }
-                                }
-                                }
-                }
-            }
-        };
-        return config;
-    }
-
-    private PieConfig GetPieChartConfigClusterCPU()
+    private PieConfig GetPieChartConfig(string header)
     {
         var config = new PieConfig
         {
@@ -331,27 +381,28 @@
                 Title = new OptionsTitle
                 {
                     Display = true,
-                    Text = "Cluster CPU"
-                }
-            }
-        };
-        return config;
-    }
-    private PieConfig GetPieChartConfigClusterMemory()
-    {
-        var config = new PieConfig
-        {
-            Options = new PieOptions
-            {
-                Responsive = true,
-                Title = new OptionsTitle
-                {
-                    Display = true,
-                    Text = "Cluster Memory"
+                    Text = header
                 }
             }
         };
         return config;
     }
 
+    private void LoadPods(KubeState kubeState)
+    {
+        PodList = kubeState.Pods.Where(a => a.Readiness == "false");
+    }
+    private void ViewLogs(string name, string ns)
+    {
+        var logs = KubernetesService.GetPodLogs(name, ns).Result;
+        //PodList = kubeState.Pods.Where(a => a.Readiness == "false");
+        var parameters = new DialogParameters { ["LogText"] = logs };
+        DialogOptions dialogOptions = new DialogOptions() { MaxWidth = MaxWidth.Large, FullWidth = true };
+        var dialog = DialogService.Show<LogView>("Delete Server", parameters, dialogOptions);
+    }
+    private void ToggleOverlay(bool visible)
+    {
+        isVisible = visible;
+        StateHasChanged();
+    }
 }

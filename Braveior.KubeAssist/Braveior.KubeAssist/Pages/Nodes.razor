@@ -39,15 +39,22 @@
 @code
 {
 
+    [Inject]
+    private IState<KubeStateState> KubeStateState { get; set; }
+
     protected override void OnInitialized()
     {
         LoadNodes();
+        base.OnInitialized();
     }
 
     private void LoadNodes()
     {
-        var kubeState = KubernetesService.GetKubeState();
-        NodesList = kubeState.NodeDetails;
+        if (KubeStateState.Value.KubeState != null)
+        {
+            NodesList = KubeStateState.Value.KubeState.NodeDetails;
+        }
+
     }
     private static IEnumerable<KNode> NodesList { get; set; }
 

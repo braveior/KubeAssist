@@ -24,16 +24,22 @@
 
 @code
 {
+    [Inject]
+    private IState<KubeStateState> KubeStateState { get; set; }
 
     protected override void OnInitialized()
     {
         LoadDeployments();
+        base.OnInitialized();
     }
 
     private void LoadDeployments()
     {
-        var kubeState = KubernetesService.GetKubeState();
-        DeploymentList = kubeState.Deployments;
+        if (KubeStateState.Value.KubeState != null)
+        {
+
+            DeploymentList = KubeStateState.Value.KubeState.Deployments;
+        }
     }
     private static IEnumerable<Deployment> DeploymentList { get; set; }
 

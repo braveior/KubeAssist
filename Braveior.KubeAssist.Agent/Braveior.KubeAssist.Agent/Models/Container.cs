@@ -1,9 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+using System.Text;
 
-namespace Braveior.KubeAssist.Services.Models
+namespace Braveior.KubeAssist.Agent.Models
 {
     public class Container
     {
@@ -36,6 +35,7 @@ namespace Braveior.KubeAssist.Services.Models
         public string CPUResourceLimits { get; set; }
 
         public string MemoryResourceLimits { get; set; }
+
 
     }
 }

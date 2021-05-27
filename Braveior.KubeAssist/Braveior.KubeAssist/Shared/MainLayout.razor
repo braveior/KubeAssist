@@ -8,20 +8,19 @@
         <img align="left" src="images/kubeassist_logo_t.png" />
         <MudAppBarSpacer />
     </MudAppBar>
-    <MudDrawer @bind-Open="@open" Elevation="1">
+    <MudDrawer @bind-Open="@open" ClipMode="DrawerClipMode.Always" Elevation="1">
         <MudDrawerHeader>
             <MudText Typo="Typo.h6">Menu</MudText>
         </MudDrawerHeader>
         <MudNavMenu>
-            <MudNavLink Href="/dashboard">Dashboard</MudNavLink>
+            <MudNavLink Href="/">Dashboard</MudNavLink>
             <MudNavLink Href="/nodes">Nodes</MudNavLink>
             <MudNavLink Href="/deps">Deployments</MudNavLink>
             <MudNavLink Href="/pods">Pods</MudNavLink>
             <MudNavLink Href="/pvs">Persistent Volumes</MudNavLink>
             <MudNavLink Href="/pvcs">Persistent Volume Claims</MudNavLink>
             <MudNavLink Href="/scs">Storage Classes</MudNavLink>
-            <MudNavLink Href="/test">Test</MudNavLink>
-            <MudNavLink Href="/newdep">New Deployment</MudNavLink>
+            @*<MudNavLink Href="/newdep">New Deployment</MudNavLink>*@
         </MudNavMenu>
     </MudDrawer>
     <MudMainContent Class="pt-16 px-16">
@@ -32,7 +31,7 @@
 </MudLayout>
 
 @code{
-    bool open = false;
+    bool open = true;
 
     void ToggleDrawer()
     {

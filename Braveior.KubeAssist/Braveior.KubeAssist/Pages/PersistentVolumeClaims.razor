@@ -28,16 +28,20 @@
 
 @code
 {
-
+        [Inject]
+        private IState<KubeStateState> KubeStateState { get; set; }
     protected override void OnInitialized()
     {
         LoadPersistenceVolumes();
+        base.OnInitialized();
     }
 
     private void LoadPersistenceVolumes()
     {
-        var kubeState = KubernetesService.GetKubeState();
-        PVCList = kubeState.PersistentVolumeClaims;
+        if (KubeStateState.Value.KubeState != null)
+        {
+            PVCList = KubeStateState.Value.KubeState.PersistentVolumeClaims;
+        }
     }
     private static IEnumerable<PersistentVolumeClaim> PVCList { get; set; }
 
