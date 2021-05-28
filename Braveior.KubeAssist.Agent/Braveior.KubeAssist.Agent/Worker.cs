@@ -3,11 +3,13 @@ using Elasticsearch.Net;
 using k8s;
 using k8s.Models;
 using Microsoft.Extensions.Hosting;
+using Nest;
 using Serilog;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -29,38 +31,48 @@ namespace Braveior.KubeAssist.Agent
            .CreateLogger();
             while (!stoppingToken.IsCancellationRequested)
             {
+
                 await GenerateMetrics(logger);
-                
-                await Task.Delay(1000, stoppingToken);
+                logger.Information("Message posted");
+                await Task.Delay(5000, stoppingToken);
             }
         }
         private async Task GenerateMetrics(ILogger logger)
         {
-            var settings = new ConnectionConfiguration(new Uri("http://192.168.0.112:9200/"))
-            .RequestTimeout(TimeSpan.FromMinutes(2));
-            var client = new ElasticLowLevelClient(settings);
-            var kubeState = GetKubeStateMetrics(logger);
+           HttpClient webClient = new HttpClient();
+
+            // var settings = new ConnectionConfiguration(new Uri("http://192.168.0.112:9200/"))
+            //.RequestTimeout(TimeSpan.FromMinutes(2));
+            // var client = new ElasticLowLevelClient(settings);
+            var settings = new ConnectionSettings(new Uri("http://192.168.0.112:9200/"));
+            var client = new ElasticClient(settings);
+
+            var response = await webClient.GetStringAsync("http://localhost:49484/metrics");
+            string[] metrics = response.Split("\n",StringSplitOptions.RemoveEmptyEntries);
+            var kubeState = GetKubeStateMetrics(logger, metrics);
             await PostKubeStateMetrics(client, kubeState);
             List<PodMetric> podMetricList = await GeneratePodMetrics(kubeState);
-            await PostPodMetrics(client,podMetricList);
-            //List<NamespaceMetric> nsMetricList 
+            await PostPodMetrics(client, podMetricList);
+            List<NamespaceMetric> nsMetricList =  GenerateNamespaceMetrics(podMetricList,kubeState);
+            await PostNamespaceMetrics(client, nsMetricList);
 
         }
-        private KubeState GetKubeStateMetrics(ILogger logger)
+        private KubeState GetKubeStateMetrics(ILogger logger, string[] metrics)
         {
-            var metrics = File.ReadAllLines("metrics.txt");
+            //var metrics = File.ReadAllLines("metrics.txt");
             KubeState kubeState = new KubeState(metrics, logger);
             kubeState.TimeStamp = DateTime.Now;
             return kubeState;
         }
-        private async Task PostKubeStateMetrics(ElasticLowLevelClient client, KubeState kubeState)
+        private async Task PostKubeStateMetrics(ElasticClient client, KubeState kubeState)
         {
-            var response = await client.IndexAsync<StringResponse>("kubestate-" + String.Format("{0:yyyy.MM.dd}", DateTime.Now), PostData.Serializable(kubeState));
+            var response = await client.IndexAsync( kubeState, idx => idx.Index("kubestate-" + String.Format("{0:yyyy.MM.dd}", DateTime.Now.ToUniversalTime())) );
         }
-        private async Task PostPodMetrics(ElasticLowLevelClient client, List<PodMetric> podMetricList)
+        private async Task PostPodMetrics(ElasticClient client, List<PodMetric> podMetricList)
         {
             foreach(var metric in podMetricList)
-                await client.IndexAsync<StringResponse>("podmetrics-" + String.Format("{0:yyyy.MM.dd}", DateTime.Now), PostData.Serializable(metric));
+                await client.IndexAsync(metric, idx => idx.Index("podmetrics-" + String.Format("{0:yyyy.MM.dd}", DateTime.Now.ToUniversalTime())));
+
         }
         private async Task<List<PodMetric>> GeneratePodMetrics(KubeState kubeState)
         {
@@ -78,7 +90,7 @@ namespace Braveior.KubeAssist.Agent
                     foreach(var container in metric.Containers)
                     {
                         //Refactoring needed
-                        cpu = Int32.Parse(container.Usage["cpu"].ToString().Replace("m","")); 
+                        cpu += Int32.Parse(container.Usage["cpu"].ToString().Replace("m","")); 
                         memory += container.Usage["memory"].ToInt64();
                     }
                     podMetric.CPU = cpu;
@@ -89,12 +101,30 @@ namespace Braveior.KubeAssist.Agent
             }
             return podMetricList;
         }
-        //private async Task<List<NamespaceMetric>> GenerateNamespaceMetrics(List<PodMetric> podMetrics,KubeState kubeState)
-        //{ 
-        //    foreach(var ns in kubeState.Namespaces)
-        //    {
+        private List<NamespaceMetric> GenerateNamespaceMetrics(List<PodMetric> podMetrics, KubeState kubeState)
+        {
 
-        //    }
-        //}
+            List<NamespaceMetric> nsMetricList = new List<NamespaceMetric>();
+            foreach (var ns in kubeState.Namespaces)
+            {
+                //if(ns.Name.Equals(""))
+                var nsPods = podMetrics.Where(a => a.Namespace.Equals(ns.Name));
+                int cpu = 0;
+                long memory = 0;
+                foreach (var pod in nsPods)
+                {
+                    cpu += pod.CPU;
+                    memory += pod.Memory;
+                }
+                if(nsPods.Count()>0)
+                    nsMetricList.Add(new NamespaceMetric() { Name =ns.Name, CPU = cpu, Memory = memory, TimeStamp = DateTime.Now });
+            }
+            return nsMetricList;
+        }
+        private async Task PostNamespaceMetrics(ElasticClient client, List<NamespaceMetric> nsMetricList)
+        {
+            foreach (var metric in nsMetricList)
+                await client.IndexAsync(metric, idx => idx.Index("namespacemetrics-" + String.Format("{0:yyyy.MM.dd}", DateTime.Now.ToUniversalTime())));
+        }
     }
 }

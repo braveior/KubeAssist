@@ -30,7 +30,7 @@
             <Chart Config="configNSMemory"></Chart>
         </MudPaper>
     </MudItem>
-    <MudItem lg="4">
+    @*<MudItem lg="4">
 
         <MudPaper Class="mt-16" Elevation="3">
             <Chart Config="configClusterCPU"></Chart>
@@ -45,7 +45,7 @@
         <MudPaper Class="mt-16" Elevation="3">
             <Chart Config="configClusterPods"></Chart>
         </MudPaper>
-    </MudItem>
+    </MudItem>*@
     <MudItem lg="12">
         <MudTable Dense="true" Items="@PodList" Hover="true" Breakpoint="Breakpoint.Sm">
             <HeaderContent>
@@ -101,7 +101,7 @@
 
     Queue<System.Drawing.Color> SysColors { get; set; } = new Queue<System.Drawing.Color>();
 
-    List<string> Namespaces = new List<string>() { "default", "NamespaceA" };
+    List<string> Namespaces = new List<string>() { "default"};
     List<NamespaceMetric> NamespaceMetrics = new List<NamespaceMetric>();
 
     private static IEnumerable<Pod> PodList { get; set; }
@@ -141,7 +141,7 @@
         configClusterMemory = GetPieChartConfig("Cluster Memory");
 
         GenerateNamespaceCharts("7");
-        GenerateClusterPieCharts(KubeState);
+        //GenerateClusterPieCharts(KubeState);
         LoadPods(KubeState);
         base.OnInitialized();
         ToggleOverlay(false);
@@ -185,7 +185,7 @@
             ""range"": {
                     ""timeStamp"": {
                     ""gte"": ""now-#DAYS#d/d"",
-                    ""lt"": ""now/d""
+                    ""lte"": ""now/d""
                 }
             }
             }
@@ -196,7 +196,7 @@
                 ""sales_over_time"": {
                 ""date_histogram"": {
                 ""field"": ""timeStamp"",
-                ""calendar_interval"": ""day""
+                ""calendar_interval"": ""minute""
                 },
                 ""aggs"" : {
                 ""avg_cpu"" : {
@@ -217,7 +217,7 @@
         foreach (var ns in Namespaces)
         {
             var searchResponse = lc.Search<BytesResponse>
-            ("kubensmetric", namespaceMetricsQueryTemplate.Replace("#NAMESPACE#", ns).Replace("#DAYS#", day)).Body;
+            ("namespacemetrics-*", namespaceMetricsQueryTemplate.Replace("#NAMESPACE#", ns).Replace("#DAYS#", day)).Body;
             string utfString = Encoding.UTF8.GetString(searchResponse, 0, searchResponse.Length);
             var metricResult = JsonConvert.DeserializeObject<MetricResult>(utfString);
 

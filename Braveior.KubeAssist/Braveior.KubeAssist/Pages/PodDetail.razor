@@ -200,7 +200,7 @@
         ""range"": {
                 ""timeStamp"": {
                 ""gte"": ""now-#DAYS#d/d"",
-                ""lt"": ""now/d""
+                ""lte"": ""now/d""
             }
         }
         }
@@ -211,7 +211,7 @@
             ""sales_over_time"": {
             ""date_histogram"": {
             ""field"": ""timeStamp"",
-            ""calendar_interval"": ""day""
+            ""calendar_interval"": ""minute""
             },
             ""aggs"" : {
             ""avg_cpu"" : {
@@ -230,7 +230,7 @@
             }";
 
         var searchResponse = lc.Search<BytesResponse>
-        ("kubepodmetric", podMetricsQueryTemplate.Replace("#PODNAME#", Pod.Name).Replace("#DAYS#", day)).Body;
+        ("podmetrics-*", podMetricsQueryTemplate.Replace("#PODNAME#", Pod.Name).Replace("#DAYS#", day)).Body;
         string utfString = Encoding.UTF8.GetString(searchResponse, 0, searchResponse.Length);
         var metricResult = JsonConvert.DeserializeObject<MetricResult>(utfString);
 

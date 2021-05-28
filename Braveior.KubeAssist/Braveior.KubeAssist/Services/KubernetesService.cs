@@ -1,11 +1,14 @@
 using Braveior.KubeAssist.Services.Models;
+using Elasticsearch.Net;
 using k8s;
 using k8s.Models;
 using Nest;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace Braveior.KubeAssist.Services
@@ -15,17 +18,17 @@ namespace Braveior.KubeAssist.Services
         public KubeState GetKubeState()
         {
             var settings = new ConnectionSettings(new Uri("http://192.168.0.112:9200/"))
-           .DefaultIndex("kubestate");
+           .DefaultIndex("kubestate-*");
             var client = new ElasticClient(settings);
-            // var asyncIndexResponse = await client.IndexDocumentAsync(kubeState);
 
             var searchResponse = client.Search<KubeState>(s => s
-            .From(0)
-            .Size(1)
-            .Query(q => q.MatchAll())
-            .Sort(s => s.Descending(a => a.TimeStamp)));
+             .From(0)
+             .Size(1)
+             .Query(q => q.MatchAll())
+             .Sort(s => s.Descending(a => a.TimeStamp)));
 
             return searchResponse.Documents.FirstOrDefault();
+
         }
 
         public ClusterMetric GetLatestClusterMetric()
@@ -47,7 +50,7 @@ namespace Braveior.KubeAssist.Services
         {
             var config = KubernetesClientConfiguration.BuildConfigFromConfigFile();
             IKubernetes client = new Kubernetes(config);
-            var response = await client.ReadNamespacedPodLogWithHttpMessagesAsync(name, ns, follow: true).ConfigureAwait(false);
+            var response = await client.ReadNamespacedPodLogWithHttpMessagesAsync(name, ns, follow: false).ConfigureAwait(false);
             var stream = response.Body;
             StreamReader reader = new StreamReader(stream);
             string log = reader.ReadToEnd();
