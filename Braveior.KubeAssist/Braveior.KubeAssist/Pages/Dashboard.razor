@@ -30,7 +30,7 @@
             <Chart Config="configNSMemory"></Chart>
         </MudPaper>
     </MudItem>
-    @*<MudItem lg="4">
+    <MudItem lg="4">
 
         <MudPaper Class="mt-16" Elevation="3">
             <Chart Config="configClusterCPU"></Chart>
@@ -45,7 +45,7 @@
         <MudPaper Class="mt-16" Elevation="3">
             <Chart Config="configClusterPods"></Chart>
         </MudPaper>
-    </MudItem>*@
+    </MudItem>
     <MudItem lg="12">
         <MudTable Dense="true" Items="@PodList" Hover="true" Breakpoint="Breakpoint.Sm">
             <HeaderContent>
@@ -141,13 +141,11 @@
         configClusterMemory = GetPieChartConfig("Cluster Memory");
 
         GenerateNamespaceCharts("7");
-        //GenerateClusterPieCharts(KubeState);
+        GenerateClusterPieCharts(KubeState);
         LoadPods(KubeState);
         base.OnInitialized();
         ToggleOverlay(false);
 
-
-        //ToggleOverlay(false);
     }
 
     private System.Drawing.Color GetNextSystemColor()
@@ -172,6 +170,8 @@
     {
         configNSCPU.Data.Datasets.Clear();
         configNSMemory.Data.Datasets.Clear();
+
+
         var settings = new ConnectionConfiguration(new Uri("http://192.168.0.112:9200"))
         .RequestTimeout(TimeSpan.FromMinutes(2));
         var lc = new ElasticLowLevelClient(settings);
@@ -196,7 +196,7 @@
                 ""sales_over_time"": {
                 ""date_histogram"": {
                 ""field"": ""timeStamp"",
-                ""calendar_interval"": ""minute""
+                ""calendar_interval"": ""hour""
                 },
                 ""aggs"" : {
                 ""avg_cpu"" : {
@@ -220,9 +220,10 @@
             ("namespacemetrics-*", namespaceMetricsQueryTemplate.Replace("#NAMESPACE#", ns).Replace("#DAYS#", day)).Body;
             string utfString = Encoding.UTF8.GetString(searchResponse, 0, searchResponse.Length);
             var metricResult = JsonConvert.DeserializeObject<MetricResult>(utfString);
+            //var metricResult = KubernetesService.GetNamespaceMetricResult(ns, day);
 
             var datasetCpu = new LineDataset<double>
-                ()
+        ()
             {
                 Label = ns,
                 BackgroundColor = ColorUtil.FromDrawingColor(System.Drawing.Color.FromArgb(128, GetNextSystemColor())),

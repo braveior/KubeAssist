@@ -29,25 +29,26 @@ namespace Braveior.KubeAssist.Agent
             using var logger = new LoggerConfiguration()
            .WriteTo.Console()
            .CreateLogger();
+            
             while (!stoppingToken.IsCancellationRequested)
             {
-
-                await GenerateMetrics(logger);
+                //var settings = new ConnectionSettings(new Uri("http://192.168.0.112:9200/"));
+                //var client = new ElasticClient(settings);
+                //await GenerateMetrics(logger,client);
                 logger.Information("Message posted");
                 await Task.Delay(5000, stoppingToken);
             }
         }
-        private async Task GenerateMetrics(ILogger logger)
+        private async Task GenerateMetrics(ILogger logger, ElasticClient client)
         {
            HttpClient webClient = new HttpClient();
 
             // var settings = new ConnectionConfiguration(new Uri("http://192.168.0.112:9200/"))
             //.RequestTimeout(TimeSpan.FromMinutes(2));
             // var client = new ElasticLowLevelClient(settings);
-            var settings = new ConnectionSettings(new Uri("http://192.168.0.112:9200/"));
-            var client = new ElasticClient(settings);
+            
 
-            var response = await webClient.GetStringAsync("http://localhost:49484/metrics");
+            var response = await webClient.GetStringAsync("http://localhost:50273/metrics");
             string[] metrics = response.Split("\n",StringSplitOptions.RemoveEmptyEntries);
             var kubeState = GetKubeStateMetrics(logger, metrics);
             await PostKubeStateMetrics(client, kubeState);
@@ -55,12 +56,15 @@ namespace Braveior.KubeAssist.Agent
             await PostPodMetrics(client, podMetricList);
             List<NamespaceMetric> nsMetricList =  GenerateNamespaceMetrics(podMetricList,kubeState);
             await PostNamespaceMetrics(client, nsMetricList);
+            var clusterMetric = await GenerateClusterMetrics(kubeState);
+            await PostClusterMetrics(client,clusterMetric);
 
         }
         private KubeState GetKubeStateMetrics(ILogger logger, string[] metrics)
         {
             //var metrics = File.ReadAllLines("metrics.txt");
             KubeState kubeState = new KubeState(metrics, logger);
+            kubeState.KubeStateElements = null;
             kubeState.TimeStamp = DateTime.Now;
             return kubeState;
         }
@@ -73,6 +77,10 @@ namespace Braveior.KubeAssist.Agent
             foreach(var metric in podMetricList)
                 await client.IndexAsync(metric, idx => idx.Index("podmetrics-" + String.Format("{0:yyyy.MM.dd}", DateTime.Now.ToUniversalTime())));
 
+        }
+        private async Task PostClusterMetrics(ElasticClient client, ClusterMetric clusterMetric)
+        {
+                await client.IndexAsync(clusterMetric, idx => idx.Index("clustermetrics-" + String.Format("{0:yyyy.MM.dd}", DateTime.Now.ToUniversalTime())));
         }
         private async Task<List<PodMetric>> GeneratePodMetrics(KubeState kubeState)
         {
@@ -91,7 +99,7 @@ namespace Braveior.KubeAssist.Agent
                     {
                         //Refactoring needed
                         cpu += Int32.Parse(container.Usage["cpu"].ToString().Replace("m","")); 
-                        memory += container.Usage["memory"].ToInt64();
+                        memory += Int32.Parse((container.Usage["memory"].ToString().Replace("Ki", "")));
                     }
                     podMetric.CPU = cpu;
                     podMetric.Memory = memory;
@@ -100,6 +108,29 @@ namespace Braveior.KubeAssist.Agent
                 }
             }
             return podMetricList;
+        }
+
+        private async Task<ClusterMetric> GenerateClusterMetrics(KubeState kubeState)
+        {
+            var config = KubernetesClientConfiguration.BuildConfigFromConfigFile();
+            var client = new Kubernetes(config);
+            var nodeMetrics = await client.GetKubernetesNodesMetricsAsync();
+            ClusterMetric clusterMetric = new ClusterMetric();
+            if (nodeMetrics != null && nodeMetrics.Items != null)
+            {
+                int cpu = 0;
+                long memory = 0;
+                
+                foreach (var metric in nodeMetrics.Items)
+                {
+
+                    //Refactoring needed
+                    cpu += Int32.Parse(metric.Usage["cpu"].ToString().Replace("m", ""));
+                    memory += Int32.Parse((metric.Usage["memory"].ToString().Replace("Ki", "")));
+                }
+                clusterMetric = new ClusterMetric() { Name = "cluster", CPU = cpu, Memory = memory, TimeStamp = DateTime.Now.ToUniversalTime() };
+            }
+            return clusterMetric;
         }
         private List<NamespaceMetric> GenerateNamespaceMetrics(List<PodMetric> podMetrics, KubeState kubeState)
         {
@@ -117,7 +148,7 @@ namespace Braveior.KubeAssist.Agent
                     memory += pod.Memory;
                 }
                 if(nsPods.Count()>0)
-                    nsMetricList.Add(new NamespaceMetric() { Name =ns.Name, CPU = cpu, Memory = memory, TimeStamp = DateTime.Now });
+                    nsMetricList.Add(new NamespaceMetric() { Name =ns.Name, CPU = cpu, Memory = memory, TimeStamp = DateTime.Now.ToUniversalTime() });
             }
             return nsMetricList;
         }

@@ -10,7 +10,7 @@ namespace Braveior.KubeAssist.Agent
         
         public int CPU { get; set; }
 
-        public int Memory { get; set; }
+        public long Memory { get; set; }
 
         public DateTime TimeStamp { get; set; }
     }

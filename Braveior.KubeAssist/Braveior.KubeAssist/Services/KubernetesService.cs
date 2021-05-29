@@ -34,7 +34,7 @@ namespace Braveior.KubeAssist.Services
         public ClusterMetric GetLatestClusterMetric()
         {
             var settings = new ConnectionSettings(new Uri("http://192.168.0.112:9200/"))
-           .DefaultIndex("kubeclustermetric");
+           .DefaultIndex("clustermetrics-*");
             var client = new ElasticClient(settings);
             // var asyncIndexResponse = await client.IndexDocumentAsync(kubeState);
 
@@ -45,6 +45,54 @@ namespace Braveior.KubeAssist.Services
             .Sort(s => s.Descending(a => a.TimeStamp)));
 
             return searchResponse.Documents.FirstOrDefault();
+        }
+        public MetricResult GetNamespaceMetricResult(string ns,string day)
+        {
+            var settings = new ConnectionConfiguration(new Uri("http://192.168.0.112:9200"))
+.RequestTimeout(TimeSpan.FromMinutes(2));
+            var lc = new ElasticLowLevelClient(settings);
+            var namespaceMetricsQueryTemplate = @"{
+        ""query"": {
+        ""bool"": {
+        ""filter"": [{
+            ""term"": { ""name.keyword"": ""#NAMESPACE#"" }
+        },
+        {
+            ""range"": {
+                    ""timeStamp"": {
+                    ""gte"": ""now-#DAYS#d/d"",
+                    ""lte"": ""now/d""
+                }
+            }
+            }
+                ]
+                }
+                },
+                ""aggs"": {
+                ""sales_over_time"": {
+                ""date_histogram"": {
+                ""field"": ""timeStamp"",
+                ""calendar_interval"": ""hour""
+                },
+                ""aggs"" : {
+                ""avg_cpu"" : {
+                ""avg"": {
+                ""field"": ""cPU""
+                }
+                },
+                ""avg_ram"" : {
+                ""avg"": {
+                ""field"": ""memory""
+                }
+                }
+                }
+                }
+                }
+                }";
+            var searchResponse = lc.Search<BytesResponse>
+            ("namespacemetrics-*", namespaceMetricsQueryTemplate.Replace("#NAMESPACE#", ns).Replace("#DAYS#", day)).Body;
+            string utfString = Encoding.UTF8.GetString(searchResponse, 0, searchResponse.Length);
+            return JsonConvert.DeserializeObject<MetricResult>(utfString);
         }
         public async Task<string> GetPodLogs(string name, string ns)
         {
