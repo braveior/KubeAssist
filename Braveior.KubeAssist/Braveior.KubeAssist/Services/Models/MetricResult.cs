@@ -29,14 +29,16 @@ namespace Braveior.KubeAssist.Services.Models
 
     public class AvgRam
     {
-        private double _value; 
+        private double _value;
         public double value { get { return _value; } set { _value = Math.Round(value, 2); } }
+        //public double value { get { return _value; } set { _value = value; } }
     }
 
     public class AvgCpu
     {
         private double _value;
         public double value { get { return _value; } set { _value = Math.Round(value, 2); } }
+        //public double value { get { return _value; } set { _value = value; } }
     }
 
     public class Bucket

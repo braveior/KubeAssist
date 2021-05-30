@@ -30,7 +30,7 @@ namespace Braveior.KubeAssist.Services.Models
 
         public bool ShowDetails { get; set; }
 
-
+        public List<Label> Labels { get; set; } = new List<Label>();
 
     }
 }

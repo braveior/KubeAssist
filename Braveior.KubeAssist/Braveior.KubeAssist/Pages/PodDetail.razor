@@ -64,58 +64,70 @@
             <Chart Config="configContainerMemory"></Chart>
         </MudPaper>
     </MudItem>
-
+    <MudItem lg="12">
+        <MudText Typo="Typo.h4">Labels</MudText>
+    </MudItem>
+    <MudItem lg="12">
+        <div Class="d-flex flex-row py-2 px-1">
+            @foreach (var label in Pod.Labels)
+            {
+                <MudChip Color="Color.Primary" Variant="Variant.Outlined" Size="MudBlazor.Size.Medium">@label.Name | @label.Value</MudChip>
+            }
+        </div>
+    </MudItem>
     @foreach (var container in Pod.Containers)
     {
+        <MudItem lg="12">
+            <MudText Typo="Typo.h4">Container - @container.Name</MudText>
+        </MudItem>
+        <MudItem lg="4">
+            <MudTextField @bind-Value="container.Name" Label="Name" Variant="Variant.Text" Margin="Margin.Dense" />
+        </MudItem>
+        <MudItem lg="4">
+            <MudTextField @bind-Value="container.ContainerId" Label="Id" Variant="Variant.Text" Margin="Margin.Dense" />
+        </MudItem>
+        <MudItem lg="4">
+            <MudTextField @bind-Value="container.Readiness" Label="Readiness" Variant="Variant.Text" Margin="Margin.Dense" />
+        </MudItem>
+        <MudItem lg="4">
+            <MudTextField @bind-Value="container.Image" Label="Image" Variant="Variant.Text" Margin="Margin.Dense" />
+        </MudItem>
+        <MudItem lg="4">
+            <MudTextField @bind-Value="container.ImageId" Label="Image Id" Variant="Variant.Text" Margin="Margin.Dense" />
+        </MudItem>
+        <MudItem lg="4">
+            <MudTextField @bind-Value="container.Status" Label="Status" Variant="Variant.Text" Margin="Margin.Dense" />
+        </MudItem>
 
-            <MudItem lg="4">
-                <MudTextField @bind-Value="container.Name" Label="Name" Variant="Variant.Text" Margin="Margin.Dense" />
-            </MudItem>
-            <MudItem lg="4">
-                <MudTextField @bind-Value="container.ContainerId" Label="Id" Variant="Variant.Text" Margin="Margin.Dense" />
-            </MudItem>
-            <MudItem lg="4">
-                <MudTextField @bind-Value="container.Readiness" Label="Readiness" Variant="Variant.Text" Margin="Margin.Dense" />
-            </MudItem>
-            <MudItem lg="4">
-                <MudTextField @bind-Value="container.Image" Label="Image" Variant="Variant.Text" Margin="Margin.Dense" />
-            </MudItem>
-            <MudItem lg="4">
-                <MudTextField @bind-Value="container.ImageId" Label="Image Id" Variant="Variant.Text" Margin="Margin.Dense" />
-            </MudItem>
-            <MudItem lg="4">
-                <MudTextField @bind-Value="container.Status" Label="Status" Variant="Variant.Text" Margin="Margin.Dense" />
-            </MudItem>
-
-            <MudItem lg="12">
-                <MudText Typo="Typo.h4">Resource Requests and Limits</MudText>
-            </MudItem>
+        <MudItem lg="12">
+            <MudText Typo="Typo.h4">Resource Requests and Limits</MudText>
+        </MudItem>
 
 
-            <MudItem lg="3">
-                <MudPaper Class="mt-16" Elevation="1">
-                    <MudText Align="Align.Center" Typo="Typo.h6">CPU Request</MudText>
-                    <MudText Align="Align.Center" Typo="Typo.h4">@container.CPUResourceRequests m</MudText>
-                </MudPaper>
-            </MudItem>
-            <MudItem lg="3">
-                <MudPaper Class="mt-16" Elevation="1">
-                    <MudText Align="Align.Center" Typo="Typo.h6">Memory Request</MudText>
-                    <MudText Align="Align.Center" Typo="Typo.h4">@container.MemoryResourceRequests Kib</MudText>
-                </MudPaper>
-            </MudItem>
-            <MudItem lg="3">
-                <MudPaper Class="mt-16" Elevation="1">
-                    <MudText Align="Align.Center" Typo="Typo.h6">CPU Limit</MudText>
-                    <MudText Align="Align.Center" Typo="Typo.h4">@container.CPUResourceLimits m</MudText>
-                </MudPaper>
-            </MudItem>
-            <MudItem lg="3">
-                <MudPaper Class="mt-16" Elevation="1">
-                    <MudText Align="Align.Center" Typo="Typo.h6">Memory Limit</MudText>
-                    <MudText Align="Align.Center" Typo="Typo.h4">@container.MemoryResourceLimits Kib</MudText>
-                </MudPaper>
-            </MudItem>
+        <MudItem lg="3">
+            <MudPaper Class="mt-16" Elevation="1">
+                <MudText Align="Align.Center" Typo="Typo.h6">CPU Request</MudText>
+                <MudText Align="Align.Center" Typo="Typo.h4">@container.CPUResourceRequests m</MudText>
+            </MudPaper>
+        </MudItem>
+        <MudItem lg="3">
+            <MudPaper Class="mt-16" Elevation="1">
+                <MudText Align="Align.Center" Typo="Typo.h6">Memory Request</MudText>
+                <MudText Align="Align.Center" Typo="Typo.h4">@container.MemoryResourceRequests Kib</MudText>
+            </MudPaper>
+        </MudItem>
+        <MudItem lg="3">
+            <MudPaper Class="mt-16" Elevation="1">
+                <MudText Align="Align.Center" Typo="Typo.h6">CPU Limit</MudText>
+                <MudText Align="Align.Center" Typo="Typo.h4">@container.CPUResourceLimits m</MudText>
+            </MudPaper>
+        </MudItem>
+        <MudItem lg="3">
+            <MudPaper Class="mt-16" Elevation="1">
+                <MudText Align="Align.Center" Typo="Typo.h6">Memory Limit</MudText>
+                <MudText Align="Align.Center" Typo="Typo.h4">@container.MemoryResourceLimits Kib</MudText>
+            </MudPaper>
+        </MudItem>
 
     }
 </MudGrid>
@@ -187,52 +199,7 @@
     {
         configContainerCPU.Data.Datasets.Clear();
         configContainerMemory.Data.Datasets.Clear();
-        var settings = new ConnectionConfiguration(new Uri("http://192.168.0.112:9200"))
-        .RequestTimeout(TimeSpan.FromMinutes(2));
-        var lc = new ElasticLowLevelClient(settings);
-        var podMetricsQueryTemplate = @"{
-    ""query"": {
-    ""bool"": {
-    ""filter"": [{
-        ""term"": { ""name.keyword"": ""#PODNAME#"" }
-    },
-    {
-        ""range"": {
-                ""timeStamp"": {
-                ""gte"": ""now-#DAYS#d/d"",
-                ""lte"": ""now/d""
-            }
-        }
-        }
-            ]
-            }
-            },
-            ""aggs"": {
-            ""sales_over_time"": {
-            ""date_histogram"": {
-            ""field"": ""timeStamp"",
-            ""calendar_interval"": ""hour""
-            },
-            ""aggs"" : {
-            ""avg_cpu"" : {
-            ""avg"": {
-            ""field"": ""cPU""
-            }
-            },
-            ""avg_ram"" : {
-            ""avg"": {
-            ""field"": ""memory""
-            }
-            }
-            }
-            }
-            }
-            }";
-
-        var searchResponse = lc.Search<BytesResponse>
-        ("podmetrics-*", podMetricsQueryTemplate.Replace("#PODNAME#", Pod.Name).Replace("#DAYS#", day)).Body;
-        string utfString = Encoding.UTF8.GetString(searchResponse, 0, searchResponse.Length);
-        var metricResult = JsonConvert.DeserializeObject<MetricResult>(utfString);
+        var metricResult = KubernetesService.GetPodMetricResult(Pod.Name, day);
 
         var datasetCpu = new LineDataset<double>
             ()

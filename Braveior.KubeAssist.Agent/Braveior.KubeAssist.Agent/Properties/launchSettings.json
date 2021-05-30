@@ -3,7 +3,7 @@
     "KubeAssist_Agent": {
       "commandName": "Project",
       "environmentVariables": {
-        "DOTNET_ENVIRONMENT": "Development"
+        "DOTNET_ENVIRONMENT": "Development"       
       },
       "dotnetRunMessages": "true"
     },

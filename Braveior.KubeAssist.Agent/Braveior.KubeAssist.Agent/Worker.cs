@@ -29,40 +29,38 @@ namespace Braveior.KubeAssist.Agent
             using var logger = new LoggerConfiguration()
            .WriteTo.Console()
            .CreateLogger();
-            
+            // var config = KubernetesClientConfiguration.BuildConfigFromConfigFile();
+            var config = KubernetesClientConfiguration.InClusterConfig();
+            var kclient = new Kubernetes(config);
+            //var settings = new ConnectionSettings(new Uri("http://192.168.0.112:9200/"));
+            var settings = new ConnectionSettings(new Uri(GetEnvironmentVariable("elasticuri")));
+            var client = new ElasticClient(settings);
             while (!stoppingToken.IsCancellationRequested)
             {
-                //var settings = new ConnectionSettings(new Uri("http://192.168.0.112:9200/"));
-                //var client = new ElasticClient(settings);
-                //await GenerateMetrics(logger,client);
-                logger.Information("Message posted");
+                
+                await GenerateMetrics(logger,client,kclient);
+                logger.Information("Message posted - " + DateTime.Now.ToUniversalTime());
                 await Task.Delay(5000, stoppingToken);
             }
         }
-        private async Task GenerateMetrics(ILogger logger, ElasticClient client)
+        private async Task GenerateMetrics(ILogger logger, ElasticClient client, Kubernetes kclient)
         {
-           HttpClient webClient = new HttpClient();
-
-            // var settings = new ConnectionConfiguration(new Uri("http://192.168.0.112:9200/"))
-            //.RequestTimeout(TimeSpan.FromMinutes(2));
-            // var client = new ElasticLowLevelClient(settings);
-            
-
-            var response = await webClient.GetStringAsync("http://localhost:50273/metrics");
+            HttpClient webClient = new HttpClient();
+            //var response = await webClient.GetStringAsync("http://localhost:52064/metrics");
+            var response = await webClient.GetStringAsync(GetEnvironmentVariable("metricsuri"));
             string[] metrics = response.Split("\n",StringSplitOptions.RemoveEmptyEntries);
             var kubeState = GetKubeStateMetrics(logger, metrics);
             await PostKubeStateMetrics(client, kubeState);
-            List<PodMetric> podMetricList = await GeneratePodMetrics(kubeState);
+            List<PodMetric> podMetricList = await GeneratePodMetrics(kubeState, kclient);
             await PostPodMetrics(client, podMetricList);
             List<NamespaceMetric> nsMetricList =  GenerateNamespaceMetrics(podMetricList,kubeState);
             await PostNamespaceMetrics(client, nsMetricList);
-            var clusterMetric = await GenerateClusterMetrics(kubeState);
+            var clusterMetric = await GenerateClusterMetrics(kubeState,kclient);
             await PostClusterMetrics(client,clusterMetric);
 
         }
         private KubeState GetKubeStateMetrics(ILogger logger, string[] metrics)
         {
-            //var metrics = File.ReadAllLines("metrics.txt");
             KubeState kubeState = new KubeState(metrics, logger);
             kubeState.KubeStateElements = null;
             kubeState.TimeStamp = DateTime.Now;
@@ -82,11 +80,10 @@ namespace Braveior.KubeAssist.Agent
         {
                 await client.IndexAsync(clusterMetric, idx => idx.Index("clustermetrics-" + String.Format("{0:yyyy.MM.dd}", DateTime.Now.ToUniversalTime())));
         }
-        private async Task<List<PodMetric>> GeneratePodMetrics(KubeState kubeState)
+        private async Task<List<PodMetric>> GeneratePodMetrics(KubeState kubeState, Kubernetes client)
         {
-            var config = KubernetesClientConfiguration.BuildConfigFromConfigFile();
-            var client = new Kubernetes(config);
-            var podMetrics = await client.GetKubernetesPodsMetricsAsync();
+            
+            var podMetrics = await client.GetKubernetesPodsMetricsAsync().ConfigureAwait(false);
             List<PodMetric> podMetricList = new List<PodMetric>(); 
             if (podMetrics != null && podMetrics.Items != null)
             {
@@ -110,11 +107,10 @@ namespace Braveior.KubeAssist.Agent
             return podMetricList;
         }
 
-        private async Task<ClusterMetric> GenerateClusterMetrics(KubeState kubeState)
+        private async Task<ClusterMetric> GenerateClusterMetrics(KubeState kubeState, Kubernetes client)
         {
-            var config = KubernetesClientConfiguration.BuildConfigFromConfigFile();
-            var client = new Kubernetes(config);
-            var nodeMetrics = await client.GetKubernetesNodesMetricsAsync();
+
+            var nodeMetrics = await client.GetKubernetesNodesMetricsAsync().ConfigureAwait(false);
             ClusterMetric clusterMetric = new ClusterMetric();
             if (nodeMetrics != null && nodeMetrics.Items != null)
             {
@@ -156,6 +152,10 @@ namespace Braveior.KubeAssist.Agent
         {
             foreach (var metric in nsMetricList)
                 await client.IndexAsync(metric, idx => idx.Index("namespacemetrics-" + String.Format("{0:yyyy.MM.dd}", DateTime.Now.ToUniversalTime())));
+        }
+        private static string GetEnvironmentVariable(string name)
+        {
+            return Environment.GetEnvironmentVariable(name.ToLower()) ?? Environment.GetEnvironmentVariable(name.ToUpper());
         }
     }
 }

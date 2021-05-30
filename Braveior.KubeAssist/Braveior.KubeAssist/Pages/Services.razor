@@ -1,0 +1,51 @@
+﻿@page "/services"
+
+@using Braveior.KubeAssist.Services
+@using Braveior.KubeAssist.Services.Models
+@inject KubernetesService KubernetesService
+
+<MudTable Dense="true"  Items="@ServiceList" Hover="true" Breakpoint="Breakpoint.Sm">
+    <HeaderContent>
+        <MudTh>Name</MudTh>
+        <MudTh>Namespace</MudTh>
+        <MudTh>ClusterIP</MudTh>
+        <MudTh>External Name</MudTh>
+        <MudTh>Load Balancer IP</MudTh>
+        <MudTh>Created Date</MudTh>
+        <MudTh>Service Type</MudTh>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd DataLabel="Name">@context.Name</MudTd>
+        <MudTd DataLabel="Namespace">@context.Namespace</MudTd>
+        <MudTd DataLabel="ClusterIP">@context.ClusterIP</MudTd>
+        <MudTd DataLabel="ExternalName">@context.ExternalName</MudTd>
+        <MudTd DataLabel="LoadBalancerIP">@context.LoadBalancerIP</MudTd>
+        <MudTd DataLabel="CreatedDate">@context.CreatedDate</MudTd>
+        <MudTd DataLabel="ServiceType">@context.ServiceType</MudTd>
+    </RowTemplate>
+ </MudTable>
+
+
+@code
+{
+    [Inject]
+    private IState<KubeStateState> KubeStateState { get; set; }
+
+    protected override void OnInitialized()
+    {
+        LoadServices();
+        base.OnInitialized();
+    }
+
+    private void LoadServices()
+    {
+        if (KubeStateState.Value.KubeState != null)
+        {
+
+            ServiceList = KubeStateState.Value.KubeState.Services;
+        }
+    }
+    private static IEnumerable<Service> ServiceList { get; set; }
+
+
+}

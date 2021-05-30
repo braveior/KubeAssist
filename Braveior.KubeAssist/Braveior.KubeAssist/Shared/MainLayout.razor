@@ -18,6 +18,7 @@
             <MudNavLink Href="/nodes">Nodes</MudNavLink>
             <MudNavLink Href="/deps">Deployments</MudNavLink>
             <MudNavLink Href="/pods">Pods</MudNavLink>
+            <MudNavLink Href="/services">Services</MudNavLink>
             <MudNavLink Href="/pvs">Persistent Volumes</MudNavLink>
             <MudNavLink Href="/pvcs">Persistent Volume Claims</MudNavLink>
             <MudNavLink Href="/scs">Storage Classes</MudNavLink>
@@ -41,6 +42,7 @@
     protected override void OnInitialized()
     {
         currentTheme = defaultTheme;
+        base.OnInitialized();
     }
     void ToggleDrawer()
     {
