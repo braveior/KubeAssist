@@ -1,0 +1,59 @@
+﻿@page "/statefulsets"
+
+@using Braveior.KubeAssist.Services
+@using Braveior.KubeAssist.Services.Models
+@inject KubernetesService KubernetesService
+@inject NavigationManager NavigationManager
+
+<MudTable Dense="true" Items="@StatefulSetList" Hover="true" Breakpoint="Breakpoint.Sm">
+    <HeaderContent>
+        <MudTh></MudTh>
+        <MudTh>Name</MudTh>
+        <MudTh>Namespace</MudTh>
+        <MudTh>No Of Replicas</MudTh>
+        <MudTh>Current Replicas</MudTh>
+        <MudTh>Ready Replicas</MudTh>
+        <MudTh>Updated Replicas</MudTh>
+        <MudTh>No of desired Pods</MudTh>
+        <MudTh>Created Date</MudTh>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd><MudButton Variant="Variant.Outlined" Size="MudBlazor.Size.Small" OnClick="@(() => NavigateStatefulSetDetails(context.Name))">Statefulset Details</MudButton></MudTd>
+        <MudTd DataLabel="Name">@context.Name</MudTd>
+        <MudTd DataLabel="Namespace">@context.Namespace</MudTd>
+        <MudTd DataLabel="NoOfReplicas">@context.NoOfReplicas</MudTd>
+        <MudTd DataLabel="CurrentReplicas">@context.CurrentReplicas</MudTd>
+        <MudTd DataLabel="ReadyReplicas">@context.ReadyReplicas</MudTd>
+        <MudTd DataLabel="UpdatedReplicas">@context.UpdatedReplicas</MudTd>
+        <MudTd DataLabel="NoOfDesiredPods">@context.NoOfDesiredPods</MudTd>
+        <MudTd DataLabel="CreatedDate">@context.CreatedDate</MudTd>
+    </RowTemplate>
+</MudTable>
+
+
+@code
+{
+    [Inject]
+    private IState<KubeStateState> KubeStateState { get; set; }
+
+    protected override void OnInitialized()
+    {
+        LoadStatefulSets();
+        base.OnInitialized();
+    }
+
+    private void LoadStatefulSets()
+    {
+        if (KubeStateState.Value.KubeState != null)
+        {
+
+            StatefulSetList = KubeStateState.Value.KubeState.StatefulSets;
+        }
+    }
+    private static IEnumerable<StatefulSet> StatefulSetList { get; set; }
+
+    private void NavigateStatefulSetDetails(string name)
+    {
+        NavigationManager.NavigateTo($"/statefulsetdetail/{name}");
+    }
+}

@@ -40,13 +40,13 @@ namespace Braveior.KubeAssist.Agent
                 
                 await GenerateMetrics(logger,client,kclient);
                 logger.Information("Message posted - " + DateTime.Now.ToUniversalTime());
-                await Task.Delay(5000, stoppingToken);
+                await Task.Delay(1000, stoppingToken);
             }
         }
         private async Task GenerateMetrics(ILogger logger, ElasticClient client, Kubernetes kclient)
         {
             HttpClient webClient = new HttpClient();
-            var response = await webClient.GetStringAsync("http://localhost:64650/metrics");
+            var response = await webClient.GetStringAsync("http://localhost:64945/metrics");
             //var response = await webClient.GetStringAsync(GetEnvironmentVariable("metricsuri"));
             string[] metrics = response.Split("\n",StringSplitOptions.RemoveEmptyEntries);
             var kubeState = GetKubeStateMetrics(logger, metrics);

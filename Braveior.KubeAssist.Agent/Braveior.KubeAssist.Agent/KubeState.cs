@@ -37,8 +37,39 @@ namespace Braveior.KubeAssist.Agent.Models
             AddPersistentStorageClaims();
 
             AddStorageClasses();
+
+            AddStatefulSets();
         }
 
+        private void AddStatefulSets()
+        {
+            var statefulsets = KubeStateElements.Where(a => a.Name == "kube_statefulset_created");
+            foreach (var statefulset in statefulsets)
+            {
+                try
+                {
+                    StatefulSets.Add(new StatefulSet()
+                    {
+
+                        Name = statefulset.keyValues["statefulset"],
+                        Namespace = statefulset.keyValues["namespace"],
+                        NoOfReplicas = KubeStateElements.Where(a => a.Name == "kube_statefulset_status_replicas" && a.keyValues["namespace"] == statefulset.keyValues["namespace"] && a.keyValues["statefulset"] == statefulset.keyValues["statefulset"]).FirstOrDefault().Value,
+                        CurrentReplicas = KubeStateElements.Where(a => a.Name == "kube_statefulset_status_replicas_current" && a.keyValues["namespace"] == statefulset.keyValues["namespace"] && a.keyValues["statefulset"] == statefulset.keyValues["statefulset"]).FirstOrDefault().Value,
+                        ReadyReplicas = KubeStateElements.Where(a => a.Name == "kube_statefulset_status_replicas_ready" && a.keyValues["namespace"] == statefulset.keyValues["namespace"] && a.keyValues["statefulset"] == statefulset.keyValues["statefulset"]).FirstOrDefault().Value,
+                        UpdatedReplicas = KubeStateElements.Where(a => a.Name == "kube_statefulset_status_replicas_updated" && a.keyValues["namespace"] == statefulset.keyValues["namespace"] && a.keyValues["statefulset"] == statefulset.keyValues["statefulset"]).FirstOrDefault().Value,
+                        NoOfDesiredPods = KubeStateElements.Where(a => a.Name == "kube_statefulset_replicas" && a.keyValues["namespace"] == statefulset.keyValues["namespace"] && a.keyValues["statefulset"] == statefulset.keyValues["statefulset"]).FirstOrDefault().Value,
+                        CreatedDate = GetDateTime(statefulset.Value),
+                        Labels = GetLabels(KubeStateElements.Where(a => a.Name == "kube_statefulset_labels" && a.keyValues["namespace"] == statefulset.keyValues["namespace"] && a.keyValues["statefulset"] == statefulset.keyValues["statefulset"] && a.Value == "1").FirstOrDefault().keyValues)
+
+                    });
+                }
+                catch (Exception ex)
+                {
+                    Logger.Error("Error adding deployments  - " + ex.Message);
+                }
+
+            }
+        }
         private void AddDeployments()
         {
             var deployments = KubeStateElements.Where(a => a.Name == "kube_deployment_created");
@@ -465,7 +496,8 @@ namespace Braveior.KubeAssist.Agent.Models
             }
             return dictionary;
         }
-        
+
+        public List<StatefulSet> StatefulSets { get; set; } = new List<StatefulSet>();
         public List<Node> NodeDetails { get; set; } = new List<Node>();
 
         public List<KubeStateElement> KubeStateElements { get; set; } = new List<KubeStateElement>();

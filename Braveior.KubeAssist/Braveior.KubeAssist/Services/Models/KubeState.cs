@@ -26,6 +26,8 @@ namespace Braveior.KubeAssist.Services.Models
         public List<PersistentVolumeClaim> PersistentVolumeClaims = new List<PersistentVolumeClaim>();
 
         public List<StorageClass> StorageClasses = new List<StorageClass>();
+
+        public List<StatefulSet> StatefulSets { get; set; } = new List<StatefulSet>();
         public DateTime TimeStamp { get; set; }
 
     }
