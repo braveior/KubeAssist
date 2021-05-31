@@ -3,9 +3,11 @@
 @using Braveior.KubeAssist.Services
 @using Braveior.KubeAssist.Services.Models
 @inject KubernetesService KubernetesService
+@inject NavigationManager NavigationManager
 
-<MudTable Dense="true"  Items="@ServiceList" Hover="true" Breakpoint="Breakpoint.Sm">
+<MudTable Dense="true" Items="@ServiceList" Hover="true" Breakpoint="Breakpoint.Sm">
     <HeaderContent>
+        <MudTh></MudTh>
         <MudTh>Name</MudTh>
         <MudTh>Namespace</MudTh>
         <MudTh>ClusterIP</MudTh>
@@ -15,6 +17,7 @@
         <MudTh>Service Type</MudTh>
     </HeaderContent>
     <RowTemplate>
+        <MudTd><MudButton Variant="Variant.Outlined" Size="MudBlazor.Size.Small" OnClick="@(() => NavigateServiceDetails(context.Name))">Service Details</MudButton></MudTd>
         <MudTd DataLabel="Name">@context.Name</MudTd>
         <MudTd DataLabel="Namespace">@context.Namespace</MudTd>
         <MudTd DataLabel="ClusterIP">@context.ClusterIP</MudTd>
@@ -23,7 +26,7 @@
         <MudTd DataLabel="CreatedDate">@context.CreatedDate</MudTd>
         <MudTd DataLabel="ServiceType">@context.ServiceType</MudTd>
     </RowTemplate>
- </MudTable>
+</MudTable>
 
 
 @code
@@ -47,5 +50,9 @@
     }
     private static IEnumerable<Service> ServiceList { get; set; }
 
+    private void NavigateServiceDetails(string name)
+    {
+        NavigationManager.NavigateTo($"/servicedetail/{name}");
+    }
 
 }

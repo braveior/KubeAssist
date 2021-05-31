@@ -17,7 +17,7 @@ namespace Braveior.KubeAssist.Services
     {
         public KubeState GetKubeState()
         {
-            //var settings = new ConnectionSettings(new Uri(GetEnvironmentVariable("elasticuri")))
+           // var settings = new ConnectionSettings(new Uri(GetEnvironmentVariable("elasticuri")))
            //.DefaultIndex("kubestate-*");
 
             var settings = new ConnectionSettings(new Uri("http://192.168.0.112:9200/"))

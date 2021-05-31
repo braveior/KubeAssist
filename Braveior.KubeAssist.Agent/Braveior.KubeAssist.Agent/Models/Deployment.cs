@@ -15,6 +15,8 @@ namespace Braveior.KubeAssist.Agent.Models
 
         public DateTime CreatedDate { get; set; }
 
+        public List<Label> Labels { get; set; } = new List<Label>();
+
     }
 }
 

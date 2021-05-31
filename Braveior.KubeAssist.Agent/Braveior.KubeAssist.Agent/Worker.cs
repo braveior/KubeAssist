@@ -29,11 +29,11 @@ namespace Braveior.KubeAssist.Agent
             using var logger = new LoggerConfiguration()
            .WriteTo.Console()
            .CreateLogger();
-            // var config = KubernetesClientConfiguration.BuildConfigFromConfigFile();
-            var config = KubernetesClientConfiguration.InClusterConfig();
+            var config = KubernetesClientConfiguration.BuildConfigFromConfigFile();
+            //var config = KubernetesClientConfiguration.InClusterConfig();
             var kclient = new Kubernetes(config);
-            //var settings = new ConnectionSettings(new Uri("http://192.168.0.112:9200/"));
-            var settings = new ConnectionSettings(new Uri(GetEnvironmentVariable("elasticuri")));
+            var settings = new ConnectionSettings(new Uri("http://192.168.0.112:9200/"));
+            //var settings = new ConnectionSettings(new Uri(GetEnvironmentVariable("elasticuri")));
             var client = new ElasticClient(settings);
             while (!stoppingToken.IsCancellationRequested)
             {
@@ -46,8 +46,8 @@ namespace Braveior.KubeAssist.Agent
         private async Task GenerateMetrics(ILogger logger, ElasticClient client, Kubernetes kclient)
         {
             HttpClient webClient = new HttpClient();
-            //var response = await webClient.GetStringAsync("http://localhost:52064/metrics");
-            var response = await webClient.GetStringAsync(GetEnvironmentVariable("metricsuri"));
+            var response = await webClient.GetStringAsync("http://localhost:64650/metrics");
+            //var response = await webClient.GetStringAsync(GetEnvironmentVariable("metricsuri"));
             string[] metrics = response.Split("\n",StringSplitOptions.RemoveEmptyEntries);
             var kubeState = GetKubeStateMetrics(logger, metrics);
             await PostKubeStateMetrics(client, kubeState);

@@ -1,0 +1,149 @@
+﻿@page "/deploymentdetail/{name}"
+
+@using Braveior.KubeAssist.Services
+@using Braveior.KubeAssist.Services.Models
+@inject KubernetesService KubernetesService
+@inject IDialogService DialogService
+@implements IDisposable;
+
+<MudText Typo="Typo.h4">Deployment Details</MudText>
+<MudGrid>
+    <MudItem lg="4">
+        <MudTextField @bind-Value="Deployment.Name" Label="Name" Variant="Variant.Text" Margin="Margin.Dense" />
+    </MudItem>
+    <MudItem lg="4">
+        <MudTextField @bind-Value="Deployment.Namespace" Label="Namespace" Variant="Variant.Text" Margin="Margin.Dense" />
+    </MudItem>
+    <MudItem lg="4">
+        <MudTextField @bind-Value="Deployment.AvailableReplicas" Label="Available Replicas" Variant="Variant.Text" Margin="Margin.Dense" />
+    </MudItem>
+
+    <MudItem lg="6">
+        <MudTextField @bind-Value="Deployment.TotalReplicas" Label="Total Replicas" Variant="Variant.Text" Margin="Margin.Dense" />
+    </MudItem>
+    <MudItem lg="6">
+        <MudTextField @bind-Value="Deployment.CreatedDate" Label="Created Date" Variant="Variant.Text" Margin="Margin.Dense" />
+    </MudItem>
+
+    <MudItem lg="12">
+        <MudText Typo="Typo.h4">Labels</MudText>
+    </MudItem>
+    <MudItem lg="12">
+        <div Class="d-flex flex-row py-2 px-1">
+            <MudChipSet Filter="true" SelectedChipChanged="MatchPods">
+                @foreach (var label in Deployment.Labels)
+                {
+                    <MudChip Text="@(label.Name + "|"  + label.Value)" Color="Color.Primary" Variant="Variant.Outlined" Size="MudBlazor.Size.Medium"></MudChip>
+                }
+            </MudChipSet>
+        </div>
+    </MudItem>
+
+    <MudItem lg="12">
+        <MudText Typo="Typo.h4">Label Matching Pods</MudText>
+    </MudItem>
+    
+    <MudTable Dense="true" Items="@PodList" Hover="true" Breakpoint="Breakpoint.Sm">
+        <HeaderContent>
+            <MudTh>Name</MudTh>
+            <MudTh>Namespace</MudTh>
+            <MudTh>UID</MudTh>
+            <MudTh>PodIP</MudTh>
+            <MudTh>StartTime</MudTh>
+            <MudTh>CreatedTime</MudTh>
+            <MudTh>Status</MudTh>
+            <MudTh>Readiness</MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd DataLabel="Name">@context.Name</MudTd>
+            <MudTd DataLabel="Namespace">@context.Namespace</MudTd>
+            <MudTd DataLabel="UID">@context.UID</MudTd>
+            <MudTd DataLabel="PodIP">@context.PodIP</MudTd>
+            <MudTd DataLabel="StartTime">@context.StartTime</MudTd>
+            <MudTd DataLabel="CreatedTime">@context.CreatedTime</MudTd>
+            <MudTd DataLabel="Status">@context.Status</MudTd>
+            <MudTd DataLabel="Readiness">@context.Readiness</MudTd>
+        </RowTemplate>
+
+    </MudTable>
+
+</MudGrid>
+
+
+
+@code
+{
+    [Parameter]
+    public string Name { get; set; }
+
+    private Deployment Deployment { get; set; }
+
+    //MudChip SelectedLabel;
+
+    private IEnumerable<Pod> PodList { get; set; } = new List<Pod>();
+
+
+    [Inject]
+    private IState<KubeStateState> KubeStateState { get; set; }
+
+    Queue<System.Drawing.Color> SysColors { get; set; } = new Queue<System.Drawing.Color>();
+
+    private void BuildSysColorsQueue()
+    {
+        SysColors.Enqueue(System.Drawing.Color.Red);
+        SysColors.Enqueue(System.Drawing.Color.Blue);
+        SysColors.Enqueue(System.Drawing.Color.Green);
+        SysColors.Enqueue(System.Drawing.Color.Orange);
+        SysColors.Enqueue(System.Drawing.Color.Violet);
+        SysColors.Enqueue(System.Drawing.Color.Black);
+        SysColors.Enqueue(System.Drawing.Color.Aqua);
+        SysColors.Enqueue(System.Drawing.Color.Chocolate);
+        SysColors.Enqueue(System.Drawing.Color.Turquoise);
+    }
+
+    protected override void OnInitialized()
+    {
+
+        BuildSysColorsQueue();
+        LoadDeploymentDetail();
+        base.OnInitialized();
+    }
+    private void LoadDeploymentDetail()
+    {
+        if (KubeStateState.Value.KubeState != null)
+        {
+            Deployment = KubeStateState.Value.KubeState.Deployments.Where(a => a.Name.Equals(Name)).FirstOrDefault();
+        }
+    }
+    private static IEnumerable<KNode> NodesList { get; set; }
+
+    private System.Drawing.Color GetNextSystemColor()
+    {
+        var color = SysColors.Dequeue();
+        SysColors.Enqueue(color);
+        return color;
+    }
+    public void MatchPods(MudChip SelectedLabel)
+    {
+        if (SelectedLabel != null && SelectedLabel.Text != null)
+        {
+            if (KubeStateState.Value.KubeState != null)
+            {
+                PodList = KubeStateState.Value.KubeState.Pods;
+                PodList = PodList.Where(a => a.Labels.Any(b => CheckLabel(b, SelectedLabel.Text.Split("|")[0], SelectedLabel.Text.Split("|")[1])));
+            }
+        }
+    }
+    private bool CheckLabel(Label label, string name, string value)
+    {
+        if (label.Name.Equals(name) && label.Value.Equals(value))
+            return true;
+        else
+            return false;
+    }
+    public void Dispose()
+    {
+        PodList = null;
+    }
+
+}

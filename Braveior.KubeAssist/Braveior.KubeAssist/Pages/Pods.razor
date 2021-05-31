@@ -6,15 +6,10 @@
 @inject NavigationManager NavigationManager
 
 <MudTable Dense="true" Items="@PodList" Hover="true" Breakpoint="Breakpoint.Sm">
-    @*<ColGroup>
-            <col style="width:300px;" />
-            <col style="width:100px;" />
-            <col />
-            <col style="width:100px;" />
-        </ColGroup>*@
     <HeaderContent>
         <MudTh></MudTh>
         <MudTh>Name</MudTh>
+        <MudTh>Namespace</MudTh>
         <MudTh>UID</MudTh>
         <MudTh>PodIP</MudTh>
         <MudTh>StartTime</MudTh>
@@ -25,6 +20,7 @@
     <RowTemplate>
         <MudTd><MudButton Variant="Variant.Outlined" Size="MudBlazor.Size.Small" OnClick="@(() => NavigatePodDetails(context.UID))">Pod Details</MudButton></MudTd>
         <MudTd DataLabel="Name">@context.Name</MudTd>
+        <MudTd DataLabel="Namespace">@context.Namespace</MudTd>
         <MudTd DataLabel="UID">@context.UID</MudTd>
         <MudTd DataLabel="PodIP">@context.PodIP</MudTd>
         <MudTd DataLabel="StartTime">@context.StartTime</MudTd>

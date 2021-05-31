@@ -3,9 +3,11 @@
 @using Braveior.KubeAssist.Services
 @using Braveior.KubeAssist.Services.Models
 @inject KubernetesService KubernetesService
+@inject NavigationManager NavigationManager
 
-<MudTable Dense="true"  Items="@DeploymentList" Hover="true" Breakpoint="Breakpoint.Sm">
+<MudTable Dense="true" Items="@DeploymentList" Hover="true" Breakpoint="Breakpoint.Sm">
     <HeaderContent>
+        <MudTh></MudTh>
         <MudTh>Name</MudTh>
         <MudTh>Namespace</MudTh>
         <MudTh>Total Replicas</MudTh>
@@ -13,13 +15,14 @@
         <MudTh>Created Date</MudTh>
     </HeaderContent>
     <RowTemplate>
+        <MudTd><MudButton Variant="Variant.Outlined" Size="MudBlazor.Size.Small" OnClick="@(() => NavigateDeploymentDetails(context.Name))">Deployment Details</MudButton></MudTd>
         <MudTd DataLabel="Name">@context.Name</MudTd>
         <MudTd DataLabel="Namespace">@context.Namespace</MudTd>
         <MudTd DataLabel="TotalReplicas">@context.TotalReplicas</MudTd>
         <MudTd DataLabel="AvailableReplicas">@context.AvailableReplicas</MudTd>
         <MudTd DataLabel="CreatedDate">@context.CreatedDate</MudTd>
     </RowTemplate>
- </MudTable>
+</MudTable>
 
 
 @code
@@ -43,5 +46,8 @@
     }
     private static IEnumerable<Deployment> DeploymentList { get; set; }
 
-
+    private void NavigateDeploymentDetails(string name)
+    {
+        NavigationManager.NavigateTo($"/deploymentdetail/{name}");
+    }
 }

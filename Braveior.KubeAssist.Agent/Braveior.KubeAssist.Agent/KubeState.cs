@@ -53,7 +53,8 @@ namespace Braveior.KubeAssist.Agent.Models
                         Namespace = deployment.keyValues["namespace"],
                         TotalReplicas = KubeStateElements.Where(a => a.Name == "kube_deployment_status_replicas" && a.keyValues["namespace"] == deployment.keyValues["namespace"] && a.keyValues["deployment"] == deployment.keyValues["deployment"]).FirstOrDefault().Value,
                         AvailableReplicas = KubeStateElements.Where(a => a.Name == "kube_deployment_status_replicas_available" && a.keyValues["namespace"] == deployment.keyValues["namespace"] && a.keyValues["deployment"] == deployment.keyValues["deployment"]).FirstOrDefault().Value,
-                        CreatedDate = GetDateTime(deployment.Value)
+                        CreatedDate = GetDateTime(deployment.Value),
+                        Labels = GetLabels(KubeStateElements.Where(a => a.Name == "kube_deployment_labels" && a.keyValues["namespace"] == deployment.keyValues["namespace"] && a.keyValues["deployment"] == deployment.keyValues["deployment"] && a.Value == "1").FirstOrDefault().keyValues)
 
                     });
                 }
@@ -153,9 +154,9 @@ namespace Braveior.KubeAssist.Agent.Models
                         Namespace = service.keyValues["namespace"],
                         ClusterIP = service.keyValues["cluster_ip"],
                         ServiceType = KubeStateElements.Where(a => a.Name == "kube_service_spec_type" && a.keyValues["namespace"] == service.keyValues["namespace"] && a.keyValues["service"] == service.keyValues["service"]).FirstOrDefault().keyValues["type"],
-                        CreatedDate = GetDateTime(KubeStateElements.Where(a => a.Name == "kube_service_created" && a.keyValues["namespace"] == service.keyValues["namespace"] && a.keyValues["service"] == service.keyValues["service"]).FirstOrDefault().Value)
-
-                    });
+                        CreatedDate = GetDateTime(KubeStateElements.Where(a => a.Name == "kube_service_created" && a.keyValues["namespace"] == service.keyValues["namespace"] && a.keyValues["service"] == service.keyValues["service"]).FirstOrDefault().Value),
+                        Labels = GetLabels(KubeStateElements.Where(a => a.Name == "kube_service_labels" && a.keyValues["namespace"] == service.keyValues["namespace"] && a.keyValues["service"] == service.keyValues["service"] && a.Value == "1").FirstOrDefault().keyValues)
+                    }); ;
                 }
                 catch(Exception ex)
                 {
@@ -367,7 +368,7 @@ namespace Braveior.KubeAssist.Agent.Models
                         Status = KubeStateElements.Where(a => a.Name == "kube_pod_status_phase" && a.keyValues["namespace"] == pod.keyValues["namespace"] && a.keyValues["pod"] == pod.keyValues["pod"] && a.Value == "1").FirstOrDefault().keyValues["phase"],
                         Readiness = KubeStateElements.Where(a => a.Name == "kube_pod_status_ready" && a.keyValues["namespace"] == pod.keyValues["namespace"] && a.keyValues["pod"] == pod.keyValues["pod"] && a.Value == "1").FirstOrDefault().keyValues["condition"],
                         Containers = GetContainers(pod.keyValues["namespace"], pod.keyValues["pod"]),
-                        Labels = GetPodLabels(KubeStateElements.Where(a => a.Name == "kube_pod_labels" && a.keyValues["namespace"] == pod.keyValues["namespace"] && a.keyValues["pod"] == pod.keyValues["pod"] && a.Value == "1").FirstOrDefault().keyValues),
+                        Labels = GetLabels(KubeStateElements.Where(a => a.Name == "kube_pod_labels" && a.keyValues["namespace"] == pod.keyValues["namespace"] && a.keyValues["pod"] == pod.keyValues["pod"] && a.Value == "1").FirstOrDefault().keyValues),
                          
                          
                     }
@@ -380,7 +381,7 @@ namespace Braveior.KubeAssist.Agent.Models
             }
         }
 
-        private List<Label> GetPodLabels(Dictionary<string,string> keyValues)
+        private List<Label> GetLabels(Dictionary<string,string> keyValues)
         {
             List<Label> labels = new List<Label>();
             foreach (var key in keyValues.Keys.Where(a => a.StartsWith("label_")))
