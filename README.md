@@ -1,8 +1,10 @@
 **KubeAssist** is an Open source web application to perform day to day operations with Kubernetes clusters similar to Kubectl command line tool. It’s an extendable architecture initiated by Braveior Technologies LLP in April 2021. The main goal of KubeAssist is to provide a playground for the Braveior Academy members to research and expand their R&D skills on .NET 5 , Blazor and  Kubernetes enhancing their programming and Innovation skills.
 https://www.braveior.com
 
-![alt text](https://raw.githubusercontent.com/braveior/KubeAssist/main/kube-assist-arch.png "Kube Assist Architecture")
-Braveior also provides a reference Visual Cloud native Foundation Course covering an end – end Modern Product development Experience. 
+![alt text](https://raw.githubusercontent.com/braveior/KubeAssist/main/kube-assist-arch.png "Kube Assist Architecture")  
+
+Braveior also provides a reference Visual Cloud native Foundation Course covering an end – end Modern Product development Experience.  
+
 HighLights:
 1. Native Cloud Develpment Architecture
 2. Modern Database technologies
@@ -13,8 +15,9 @@ HighLights:
 7. Monitoring with Promethues and Grafana
 
 Course Table of Contents
-https://www.braveior.com/courses/cloud-native-computing-foundation-with-net-and-kubernetes/
-**Dont miss the Sample videos**
+https://www.braveior.com/courses/cloud-native-computing-foundation-with-net-and-kubernetes/  
+
+**Dont miss the Sample videos** :blush:
 
 KubeAssist – Setup :
 
