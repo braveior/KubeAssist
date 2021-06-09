@@ -32,11 +32,11 @@ namespace Braveior.KubeAssist.Agent.Models
 
             AddServices();
 
-            AddPersistentStorages();
+            AddPersistentVolumes();
 
-            AddPersistentStorageClaims();
+            AddPersistentVolumeClaims();
 
-            AddStorageClasses();
+            //AddStorageClasses();
 
             AddStatefulSets();
         }
@@ -120,7 +120,7 @@ namespace Braveior.KubeAssist.Agent.Models
             }
         }
 
-        private void AddPersistentStorageClaims()
+        private void AddPersistentVolumeClaims()
         {
             var pvcs = KubeStateElements.Where(a => a.Name == "kube_persistentvolumeclaim_info");
 
@@ -136,7 +136,8 @@ namespace Braveior.KubeAssist.Agent.Models
                         VolumeName = pvc.keyValues["volumename"],
                         Phase = KubeStateElements.Where(a => a.Name == "kube_persistentvolumeclaim_status_phase" && a.keyValues["persistentvolumeclaim"] == pvc.keyValues["persistentvolumeclaim"] && a.keyValues["namespace"] == pvc.keyValues["namespace"] && a.Value == "1").FirstOrDefault().keyValues["phase"],
                         AccessMode = KubeStateElements.Where(a => a.Name == "kube_persistentvolumeclaim_access_mode" && a.keyValues["persistentvolumeclaim"] == pvc.keyValues["persistentvolumeclaim"] && a.keyValues["namespace"] == pvc.keyValues["namespace"] && a.Value == "1").FirstOrDefault().keyValues["access_mode"],
-                        ResourceRequestsStorage = GetByteSize(KubeStateElements.Where(a => a.Name == "kube_persistentvolumeclaim_resource_requests_storage_bytes" && a.keyValues["persistentvolumeclaim"] == pvc.keyValues["persistentvolumeclaim"] && a.keyValues["namespace"] == pvc.keyValues["namespace"]).FirstOrDefault().Value)
+                        ResourceRequestsStorage = GetByteSize(KubeStateElements.Where(a => a.Name == "kube_persistentvolumeclaim_resource_requests_storage_bytes" && a.keyValues["persistentvolumeclaim"] == pvc.keyValues["persistentvolumeclaim"] && a.keyValues["namespace"] == pvc.keyValues["namespace"]).FirstOrDefault().Value),
+                        Labels = GetLabels(KubeStateElements.Where(a => a.Name == "kube_persistentvolumeclaim_labels" && a.keyValues["namespace"] == pvc.keyValues["namespace"] && a.keyValues["persistentvolumeclaim"] == pvc.keyValues["persistentvolumeclaim"] && a.Value == "1").FirstOrDefault().keyValues)
                     });
                 }
                 catch(Exception ex)
@@ -146,7 +147,7 @@ namespace Braveior.KubeAssist.Agent.Models
             }
         }
 
-        private void AddPersistentStorages()
+        private void AddPersistentVolumes()
         {
             var pvs = KubeStateElements.Where(a => a.Name == "kube_persistentvolume_info");
 
@@ -159,8 +160,9 @@ namespace Braveior.KubeAssist.Agent.Models
                         Name = pv.keyValues["persistentvolume"],
                         StorageClass = pv.keyValues["storageclass"],
                         Phase = KubeStateElements.Where(a => a.Name == "kube_persistentvolume_status_phase" && a.keyValues["persistentvolume"] == pv.keyValues["persistentvolume"] && a.Value == "1").FirstOrDefault().keyValues["phase"],
-                        Capacity = GetByteSize(KubeStateElements.Where(a => a.Name == "kube_persistentvolume_capacity_bytes" && a.keyValues["persistentvolume"] == pv.keyValues["persistentvolume"]).FirstOrDefault().Value)
-
+                        Capacity = GetByteSize(KubeStateElements.Where(a => a.Name == "kube_persistentvolume_capacity_bytes" && a.keyValues["persistentvolume"] == pv.keyValues["persistentvolume"]).FirstOrDefault().Value),
+                        Labels = GetLabels(KubeStateElements.Where(a => a.Name == "kube_persistentvolume_labels" && a.keyValues["persistentvolume"] == pv.keyValues["persistentvolume"] && a.Value == "1").FirstOrDefault().keyValues)
+                         
                     });
                 }
                 catch(Exception ex)

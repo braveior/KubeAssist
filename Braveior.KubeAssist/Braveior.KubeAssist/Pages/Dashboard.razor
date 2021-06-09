@@ -1,5 +1,5 @@
 ﻿@page "/"
-
+@page "/dashboard"
 @namespace Braveior.KubeAssist.Pages
 @using System.Text;
 @using ChartJs.Blazor.PieChart
@@ -13,12 +13,16 @@
 
 
 <MudGrid>
-    <MudItem lg="12">
+    <MudItem lg="8">
         <MudButtonGroup Color="MudBlazor.Color.Primary" Variant="Variant.Outlined">
             <MudButton @onclick="GenerteMonthNSChart">Month</MudButton>
             <MudButton @onclick="GenerteWeekNSChart">Week</MudButton>
             <MudButton @onclick="GenerteDayNSChart">Day</MudButton>
+
         </MudButtonGroup>
+    </MudItem>
+    <MudItem lg="4">
+        <MudButton @onclick="@((e) => LoadDashboard(true))">Refresh</MudButton>
     </MudItem>
     <MudItem lg="6">
         <MudPaper Class="mt-16" Elevation="3">
@@ -37,15 +41,15 @@
         </MudPaper>
     </MudItem>
     <MudItem lg="4">
-        <MudPaper Class="mt-16" Elevation="3">
-            <Chart Config="configClusterMemory"></Chart>
-        </MudPaper>
-    </MudItem>
-    <MudItem lg="4">
-        <MudPaper Class="mt-16" Elevation="3">
-            <Chart Config="configClusterPods"></Chart>
-        </MudPaper>
-    </MudItem>
+            <MudPaper Class="mt-16" Elevation="3">
+                <Chart Config="configClusterMemory"></Chart>
+            </MudPaper>
+        </MudItem>
+        <MudItem lg="4">
+            <MudPaper Class="mt-16" Elevation="3">
+                <Chart Config="configClusterPods"></Chart>
+            </MudPaper>
+        </MudItem>
     <MudItem lg="12">
         <MudTable Dense="true" Items="@PodList" Hover="true" Breakpoint="Breakpoint.Sm">
             <HeaderContent>
@@ -91,7 +95,7 @@
 
     private PieConfig configClusterPods;
 
-    private bool isVisible = true;
+    private bool isVisible;
 
     [Inject]
     private IState<KubeStateState> KubeStateState { get; set; }
@@ -101,7 +105,7 @@
 
     Queue<System.Drawing.Color> SysColors { get; set; } = new Queue<System.Drawing.Color>();
 
-    List<string> Namespaces = new List<string>() { "default"};
+    List<string> Namespaces = new List<string>() { "default" };
     List<NamespaceMetric> NamespaceMetrics = new List<NamespaceMetric>();
 
     private static IEnumerable<Pod> PodList { get; set; }
@@ -122,9 +126,21 @@
     }
     protected override void OnInitialized()
     {
-        //ToggleOverlay(true);
+        ToggleOverlay(true);
+        BuildSysColorsQueue();
+        configNSCPU = GetLineChartConfig("Namespace CPU Trend");
+        configNSMemory = GetLineChartConfig("Namespace Memory Trend");
+        configClusterCPU = GetPieChartConfig("Cluster CPU");
+        configClusterMemory = GetPieChartConfig("Cluster Memory");
+        configClusterPods = GetPieChartConfig("Cluster Pods");
+        LoadDashboard(false);
+        base.OnInitialized();
+        ToggleOverlay(false);
 
-        if (KubeStateState.Value.KubeState != null)
+    }
+    private void LoadDashboard(bool hardReload)
+    {
+        if (KubeStateState.Value.KubeState != null && !hardReload)
         {
             KubeState = KubeStateState.Value.KubeState;
         }
@@ -134,20 +150,13 @@
             KubeState = kubeState;
             Dispatcher.Dispatch(new KubeFetchDataAction(KubeState));
         }
-        BuildSysColorsQueue();
-        configNSCPU = GetLineChartConfig("Namespace CPU Trend");
-        configNSMemory = GetLineChartConfig("Namespace Memory Trend");
-        configClusterCPU = GetPieChartConfig("Cluster CPU");
-        configClusterMemory = GetPieChartConfig("Cluster Memory");
+
+
 
         GenerateNamespaceCharts("7");
         GenerateClusterPieCharts(KubeState);
         LoadPods(KubeState);
-        base.OnInitialized();
-        ToggleOverlay(false);
-
     }
-
     private System.Drawing.Color GetNextSystemColor()
     {
         var color = SysColors.Dequeue();
@@ -160,76 +169,22 @@
     }
     private void GenerteWeekNSChart()
     {
-        GenerateNamespaceCharts("7");
+        GenerateNamespaceCharts("14");
     }
     private void GenerteDayNSChart()
     {
-        GenerateNamespaceCharts("2");
+        GenerateNamespaceCharts("5");
     }
     private void GenerateNamespaceCharts(string day)
     {
         configNSCPU.Data.Datasets.Clear();
         configNSMemory.Data.Datasets.Clear();
 
-
-        //var settings = new ConnectionConfiguration(new Uri("http://192.168.0.112:9200"))
-        //.RequestTimeout(TimeSpan.FromMinutes(2));
-        //var lc = new ElasticLowLevelClient(settings);
-        //var namespaceMetricsQueryTemplate = @"{
-        //""query"": {
-        //""bool"": {
-        //""filter"": [{
-        //    ""term"": { ""name.keyword"": ""#NAMESPACE#"" }
-        //},
-        //{
-        //    ""range"": {
-        //            ""timeStamp"": {
-        //            ""gte"": ""now-#DAYS#d/d"",
-        //            ""lte"": ""now/d""
-        //        }
-        //    }
-        //    }
-        //        ]
-        //        }
-        //        },
-        //        ""aggs"": {
-        //        ""sales_over_time"": {
-        //        ""date_histogram"": {
-        //        ""field"": ""timeStamp"",
-        //        ""calendar_interval"": ""hour""
-        //        },
-        //        ""aggs"" : {
-        //        ""avg_cpu"" : {
-        //        ""avg"": {
-        //        ""field"": ""cPU""
-        //        }
-        //        },
-        //        ""avg_ram"" : {
-        //        ""avg"": {
-        //        ""field"": ""memory""
-        //        }
-        //        }
-        //        }
-        //        }
-        //        }
-        //        }";
-
         foreach (var ns in Namespaces)
         {
-            //var searchResponse = lc.Search<BytesResponse>
-            //("namespacemetrics-*", namespaceMetricsQueryTemplate.Replace("#NAMESPACE#", ns).Replace("#DAYS#", day)).Body;
-            //string utfString = Encoding.UTF8.GetString(searchResponse, 0, searchResponse.Length);
-            //var jsonSettings = new JsonSerializerSettings
-            //{
-            //    NullValueHandling = NullValueHandling.Ignore,
-            //    MissingMemberHandling = MissingMemberHandling.Ignore
-            //};
-
-            //var metricResult = JsonConvert.DeserializeObject<MetricResult>(utfString,jsonSettings);
             var metricResult = KubernetesService.GetNamespaceMetricResult(ns, day);
 
-            var datasetCpu = new LineDataset<double>
-    ()
+            var datasetCpu = new LineDataset<double>()
             {
                 Label = ns,
                 BackgroundColor = ColorUtil.FromDrawingColor(System.Drawing.Color.FromArgb(128, GetNextSystemColor())),
@@ -263,9 +218,7 @@
 
     private void GenerateClusterPieCharts(KubeState kubeState)
     {
-        configClusterCPU = GetPieChartConfig("Cluster CPU");
-        configClusterMemory = GetPieChartConfig("Cluster Memory");
-        configClusterPods = GetPieChartConfig("Cluster Pods");
+
         DrawAvailableClusterCPUMemoryPieChart(kubeState);
         DrawAvailableClusterPodsPieChart(kubeState);
 
@@ -280,7 +233,7 @@
             clusterMemory += long.Parse(node.Memory);
         }
         var clusterMetric = KubernetesService.GetLatestClusterMetric();
-
+        configClusterCPU.Data.Labels.Clear();
         configClusterCPU.Data.Labels.Add("Remaining");
         configClusterCPU.Data.Labels.Add("Used");
         PieDataset<long> datasetClusterCPU = new PieDataset<long>(new[] { clusterCPU - clusterMetric.CPU, clusterMetric.CPU })
@@ -292,9 +245,10 @@
 
         }
         };
+        configClusterCPU.Data.Datasets.Clear();
         configClusterCPU.Data.Datasets.Add(datasetClusterCPU);
 
-
+        configClusterMemory.Data.Labels.Clear();
         configClusterMemory.Data.Labels.Add("Remaining");
         configClusterMemory.Data.Labels.Add("Used");
         PieDataset<long> datasetClusterMemory = new PieDataset<long>(new[] { clusterMemory - clusterMetric.Memory, clusterMetric.Memory })
@@ -306,10 +260,12 @@
 
         }
         };
+        configClusterMemory.Data.Datasets.Clear();
         configClusterMemory.Data.Datasets.Add(datasetClusterMemory);
     }
     private void DrawAvailableClusterPodsPieChart(KubeState kubeState)
     {
+        configClusterPods.Data.Labels.Clear();
         configClusterPods.Data.Labels.Add("Remaining");
         configClusterPods.Data.Labels.Add("Used");
 
@@ -329,6 +285,7 @@
 
         }
         };
+        configClusterPods.Data.Datasets.Clear();
         configClusterPods.Data.Datasets.Add(datasetClusterPods);
     }
 
@@ -401,11 +358,13 @@
     }
     private void ViewLogs(string name, string ns)
     {
+        ToggleOverlay(true);
         var logs = KubernetesService.GetPodLogs(name, ns).Result;
         //PodList = kubeState.Pods.Where(a => a.Readiness == "false");
         var parameters = new DialogParameters { ["LogText"] = logs };
         DialogOptions dialogOptions = new DialogOptions() { MaxWidth = MaxWidth.Large, FullWidth = true };
         var dialog = DialogService.Show<LogView>("Delete Server", parameters, dialogOptions);
+        ToggleOverlay(false);
     }
     private void ToggleOverlay(bool visible)
     {

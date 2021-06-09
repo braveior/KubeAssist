@@ -46,7 +46,7 @@ namespace Braveior.KubeAssist.Agent
         private async Task GenerateMetrics(ILogger logger, ElasticClient client, Kubernetes kclient)
         {
             HttpClient webClient = new HttpClient();
-            var response = await webClient.GetStringAsync("http://localhost:64945/metrics");
+            var response = await webClient.GetStringAsync("http://localhost:61439/metrics");
             //var response = await webClient.GetStringAsync(GetEnvironmentVariable("metricsuri"));
             string[] metrics = response.Split("\n",StringSplitOptions.RemoveEmptyEntries);
             var kubeState = GetKubeStateMetrics(logger, metrics);

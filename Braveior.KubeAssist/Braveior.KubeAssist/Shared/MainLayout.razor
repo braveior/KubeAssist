@@ -7,14 +7,14 @@
         <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@ToggleDrawer" />
         <img align="left" src="images/kubeassist_logo_t.png" />
         <MudAppBarSpacer />
-        <MudButton OnClick="@((e) => DarkMode())">Toggle Dark/Light Mode</MudButton>
+        <MudButton OnClick="@((e) => DarkMode())" Color="Color.Primary" Variant="Variant.Filled">Toggle Dark/Light Mode</MudButton>
     </MudAppBar>
     <MudDrawer @bind-Open="@open" ClipMode="DrawerClipMode.Always" Elevation="1">
         <MudDrawerHeader>
             <MudText Typo="Typo.h6">Menu</MudText>
         </MudDrawerHeader>
         <MudNavMenu>
-            <MudNavLink Href="/">Dashboard</MudNavLink>
+            <MudNavLink Href="/dashboard">Dashboard</MudNavLink>
             <MudNavLink Href="/nodes">Nodes</MudNavLink>
             <MudNavLink Href="/deps">Deployments</MudNavLink>
             <MudNavLink Href="/statefulsets">Stateful Sets</MudNavLink>
@@ -23,7 +23,7 @@
             <MudNavLink Href="/pvs">Persistent Volumes</MudNavLink>
             <MudNavLink Href="/pvcs">Persistent Volume Claims</MudNavLink>
             <MudNavLink Href="/scs">Storage Classes</MudNavLink>
-            @*<MudNavLink Href="/newdep">New Deployment</MudNavLink>*@
+            <MudNavLink Href="/newdeploy">New Deployment</MudNavLink>
         </MudNavMenu>
     </MudDrawer>
     <MudMainContent Class="pt-16 px-16">
@@ -37,6 +37,7 @@
     bool open = true;
 
     private bool IsDarkMode { get; set; } = false;
+
 
 
 

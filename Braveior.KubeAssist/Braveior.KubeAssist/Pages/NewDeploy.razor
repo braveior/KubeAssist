@@ -1,0 +1,52 @@
+﻿@page "/newdeploy"
+@using Braveior.KubeAssist.Helpers
+@using YamlDotNet.Serialization.NodeDeserializers 
+@using YamlDotNet.Core
+<div class="editorContent">
+    <MonacoEditorYaml @ref="_yamlEditor" Id="monacoEditorYaml" Value="YamlText" CssClass="editor" />
+    <MudButton OnClick="@((e) => ValidateYaml())" Color="Color.Primary" Variant="Variant.Filled">Validate</MudButton>
+    @if(ValidationError!=string.Empty)
+    {
+<MudAlert Severity="Severity.Error" Variant="Variant.Outlined" Elevation="2">@ValidationError</MudAlert>
+    }
+</div>
+
+
+
+@code
+{
+    private MonacoEditorYaml _yamlEditor { get; set; }
+
+    private string YamlText { get; set; }
+
+    private string ValidationError { get; set; } = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+
+
+    }
+    private async Task ValidateYaml()
+    {
+        try
+        {
+            SetValidationMessage(string.Empty);
+            var deserializer = new DeserializerBuilder()
+    .WithNodeDeserializer(inner => new ValidatingNodeDeserializer(inner), s => s.InsteadOf<ObjectNodeDeserializer>())
+    .Build();
+
+
+            var test = deserializer.Deserialize<object>(await _yamlEditor.GetValue());
+        }
+        catch(YamlException ex)
+        {
+            SetValidationMessage(ex.Message);
+
+        }
+    }
+    private void SetValidationMessage(string error)
+    {
+        ValidationError = error;
+        StateHasChanged();
+    }
+}

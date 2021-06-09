@@ -14,5 +14,7 @@ namespace Braveior.KubeAssist.Agent.Models
 
         public string Capacity { get; set; }
 
+        public List<Label> Labels { get; set; } = new List<Label>();
+
     }
 }
