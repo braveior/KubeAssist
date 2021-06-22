@@ -5,8 +5,7 @@
 @using ChartJs.Blazor.PieChart
 @using System.Drawing
 
-@using Braveior.KubeAssist.Services
-@using Braveior.KubeAssist.Services.Models
+
 @inject KubernetesService KubernetesService
 @inherits Fluxor.Blazor.Web.Components.FluxorComponent
 @inject IDialogService DialogService
@@ -62,13 +61,22 @@
                 <MudTh>Logs</MudTh>
             </HeaderContent>
             <RowTemplate>
-                <MudTd DataLabel="Name">@context.Name</MudTd>
-                <MudTd DataLabel="UID">@context.UID</MudTd>
-                <MudTd DataLabel="StartTime">@context.StartTime</MudTd>
-                <MudTd DataLabel="CreatedTime">@context.CreatedTime</MudTd>
-                <MudTd DataLabel="Status">@context.Status</MudTd>
-                <MudTd DataLabel="Readiness">@context.Readiness</MudTd>
-                <MudTd><MudButton Variant="Variant.Outlined" Size="MudBlazor.Size.Small" OnClick="@(() => ViewLogs(context.Name,context.Namespace))">Logs</MudButton></MudTd>
+                <MudTd DataLabel="Name">@context.Metadata.Name</MudTd>
+                <MudTd DataLabel="UID">@context.Metadata.Uid</MudTd>
+                <MudTd DataLabel="CreatedTime">@context.Metadata.CreationTimestamp</MudTd>
+                @if (context.Status.ContainerStatuses[0].State.Running != null)
+                {
+                <MudTd DataLabel="Status">Running</MudTd>
+                }
+                @if (context.Status.ContainerStatuses[0].State.Terminated != null)
+                {
+                <MudTd DataLabel="Status">Terminated</MudTd>
+                }
+                @if (context.Status.ContainerStatuses[0].State.Waiting != null)
+                {
+                <MudTd DataLabel="Status">Waiting</MudTd>
+                }
+                <MudTd><MudButton Variant="Variant.Outlined" Size="MudBlazor.Size.Small" OnClick="@(() => ViewLogs(context.Metadata.Name,context.Metadata.Namespace()))">Logs</MudButton></MudTd>
             </RowTemplate>
         </MudTable>
     </MudItem>
@@ -98,9 +106,6 @@
     private bool isVisible;
 
     [Inject]
-    private IState<KubeStateState> KubeStateState { get; set; }
-
-    [Inject]
     private IDispatcher Dispatcher { get; set; }
 
     Queue<System.Drawing.Color> SysColors { get; set; } = new Queue<System.Drawing.Color>();
@@ -108,9 +113,8 @@
     List<string> Namespaces = new List<string>() { "default" };
     List<NamespaceMetric> NamespaceMetrics = new List<NamespaceMetric>();
 
-    private static IEnumerable<Pod> PodList { get; set; }
+    private static List<V1Pod> PodList { get; set; } = new List<V1Pod>();
 
-    private static KubeState KubeState { get; set; }
 
     private void BuildSysColorsQueue()
     {
@@ -136,26 +140,15 @@
         LoadDashboard(false);
         base.OnInitialized();
         ToggleOverlay(false);
+        StateHasChanged();
 
     }
     private void LoadDashboard(bool hardReload)
     {
-        if (KubeStateState.Value.KubeState != null && !hardReload)
-        {
-            KubeState = KubeStateState.Value.KubeState;
-        }
-        else
-        {
-            var kubeState = KubernetesService.GetKubeState();
-            KubeState = kubeState;
-            Dispatcher.Dispatch(new KubeFetchDataAction(KubeState));
-        }
-
-
-
         GenerateNamespaceCharts("7");
-        GenerateClusterPieCharts(KubeState);
-        LoadPods(KubeState);
+        GenerateClusterPieCharts();
+        LoadPods();
+        StateHasChanged();
     }
     private System.Drawing.Color GetNextSystemColor()
     {
@@ -216,21 +209,22 @@
         }
     }
 
-    private void GenerateClusterPieCharts(KubeState kubeState)
+    private void GenerateClusterPieCharts()
     {
 
-        DrawAvailableClusterCPUMemoryPieChart(kubeState);
-        DrawAvailableClusterPodsPieChart(kubeState);
+        DrawAvailableClusterCPUMemoryPieChart();
+        DrawAvailableClusterPodsPieChart();
 
     }
-    private void DrawAvailableClusterCPUMemoryPieChart(KubeState kubeState)
+    private async Task DrawAvailableClusterCPUMemoryPieChart()
     {
         long clusterCPU = 0;
         long clusterMemory = 0;
-        foreach (var node in kubeState.NodeDetails)
+        var nodes = await KubernetesService.GetNodes();
+        foreach (var node in nodes.Items)
         {
-            clusterCPU += long.Parse(node.CPUCore) * 1000;
-            clusterMemory += long.Parse(node.Memory);
+            clusterCPU += node.Status.Capacity["cpu"].ToInt64() * 1000;
+            clusterMemory += long.Parse(node.Status.Capacity["memory"].ToString().Replace("Ki", ""));
         }
         var clusterMetric = KubernetesService.GetLatestClusterMetric();
         configClusterCPU.Data.Labels.Clear();
@@ -255,7 +249,7 @@
         {
             BackgroundColor = new[]
         {
-           ColorUtil.FromDrawingColor(System.Drawing.Color.FromArgb(128, GetNextSystemColor())), // Slice 1 aka "Red"
+            ColorUtil.FromDrawingColor(System.Drawing.Color.FromArgb(128, GetNextSystemColor())), // Slice 1 aka "Red"
             ColorUtil.FromDrawingColor(System.Drawing.Color.FromArgb(128, GetNextSystemColor())), // Slice 2 aka "Yellow"
 
         }
@@ -263,24 +257,26 @@
         configClusterMemory.Data.Datasets.Clear();
         configClusterMemory.Data.Datasets.Add(datasetClusterMemory);
     }
-    private void DrawAvailableClusterPodsPieChart(KubeState kubeState)
+    private async Task DrawAvailableClusterPodsPieChart()
     {
         configClusterPods.Data.Labels.Clear();
         configClusterPods.Data.Labels.Add("Remaining");
         configClusterPods.Data.Labels.Add("Used");
 
         int totalAvailablePods = 0;
-        foreach (var node in kubeState.NodeDetails)
+        var nodes = await KubernetesService.GetNodes();
+        var pods = await KubernetesService.GetPods("default");
+        foreach (var node in nodes.Items)
         {
-            totalAvailablePods += int.Parse(node.NoOfPods);
+            totalAvailablePods += node.Status.Capacity["pods"].ToInt32();
         }
-        int runningPods = kubeState.Pods.Count;
+        int runningPods = pods.Items.Count();
 
         PieDataset<int> datasetClusterPods = new PieDataset<int>(new[] { totalAvailablePods - runningPods, runningPods })
         {
             BackgroundColor = new[]
 {
-           ColorUtil.FromDrawingColor(System.Drawing.Color.FromArgb(128, GetNextSystemColor())), // Slice 1 aka "Red"
+            ColorUtil.FromDrawingColor(System.Drawing.Color.FromArgb(128, GetNextSystemColor())), // Slice 1 aka "Red"
             ColorUtil.FromDrawingColor(System.Drawing.Color.FromArgb(128, GetNextSystemColor())), // Slice 2 aka "Yellow"
 
         }
@@ -352,9 +348,13 @@
         return config;
     }
 
-    private void LoadPods(KubeState kubeState)
+    private async Task LoadPods()
     {
-        PodList = kubeState.Pods.Where(a => a.Readiness == "false");
+        //PodList = kubeState.Pods.Where(a => a.Readiness == "false");
+
+        var pods = await KubernetesService.GetPods("default");
+        PodList = pods.Items.Where(a => a.Status.ContainerStatuses[0].State.Running == null).ToList();
+
     }
     private void ViewLogs(string name, string ns)
     {

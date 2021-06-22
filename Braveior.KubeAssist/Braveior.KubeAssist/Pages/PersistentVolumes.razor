@@ -12,18 +12,17 @@
         <MudTh>Capacity</MudTh>
     </HeaderContent>
     <RowTemplate>
-        <MudTd DataLabel="Name">@context.Name</MudTd>
-        <MudTd DataLabel="StorageClass">@context.StorageClass</MudTd>
-        <MudTd DataLabel="Phase">@context.Phase</MudTd>
-        <MudTd DataLabel="Capacity">@context.Capacity</MudTd>
+        <MudTd DataLabel="Name">@context.Metadata.Name</MudTd>
+        <MudTd DataLabel="StorageClass">@context.Spec.StorageClassName</MudTd>
+        <MudTd DataLabel="Phase">@context.Status.Phase</MudTd>
+        <MudTd DataLabel="Capacity">@context.Spec.Capacity["storage"]</MudTd>
     </RowTemplate>
  </MudTable>
 
 
 @code
 {
-        [Inject]
-        private IState<KubeStateState> KubeStateState { get; set; }
+
 
     protected override void OnInitialized()
     {
@@ -31,14 +30,20 @@
         base.OnInitialized();
     }
 
-    private void LoadPersistenceVolumes()
+    private async Task LoadPersistenceVolumes()
     {
-        if (KubeStateState.Value.KubeState != null)
+        var pvs = await KubernetesService.GetPersistentVolumes("default");
+        if (pvs.Items != null)
         {
-            PVList = KubeStateState.Value.KubeState.PersistentVolumes;
+            PVList = pvs.Items.ToList();
         }
+        StateHasChanged();
+        //if (KubeStateState.Value.KubeState != null)
+        //{
+        //    PVList = KubeStateState.Value.KubeState.PersistentVolumes;
+        //}
     }
-    private static IEnumerable<PersistentVolume> PVList { get; set; }
+    private static List<V1PersistentVolume> PVList { get; set; }
 
 
 }

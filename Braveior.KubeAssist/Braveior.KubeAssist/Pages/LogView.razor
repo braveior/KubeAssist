@@ -1,9 +1,7 @@
-﻿
-@namespace Braveior.KubeAssist.Pages
-@using Braveior.KubeAssist.Services
+﻿@using Braveior.KubeAssist.Services
 @using Braveior.KubeAssist.Services.Models
 @inject KubernetesService KubernetesService
-
+@namespace Braveior.KubeAssist.Pages
 @inject ISnackbar Snackbar
 
 <MudDialog>
@@ -13,7 +11,7 @@
         </MudText>
     </TitleContent>
     <DialogContent>
-        <MudTextField T="string" Variant="Variant.Filled" Text="@LogText" Lines="25" DisableUnderLine="true" Disabled="true"  />
+        <MudTextField T="string" Variant="Variant.Filled" Text="@LogText" Lines="25" DisableUnderLine="true" Disabled="true" />
     </DialogContent>
     <DialogActions>
         <MudButton OnClick="Cancel">Close</MudButton>

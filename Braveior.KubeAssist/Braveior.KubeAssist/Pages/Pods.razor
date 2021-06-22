@@ -9,52 +9,74 @@
     <HeaderContent>
         <MudTh></MudTh>
         <MudTh>Name</MudTh>
-        <MudTh>Namespace</MudTh>
         <MudTh>UID</MudTh>
-        <MudTh>PodIP</MudTh>
-        <MudTh>StartTime</MudTh>
         <MudTh>CreatedTime</MudTh>
         <MudTh>Status</MudTh>
-        <MudTh>Readiness</MudTh>
     </HeaderContent>
     <RowTemplate>
-        <MudTd><MudButton Variant="Variant.Outlined" Size="MudBlazor.Size.Small" OnClick="@(() => NavigatePodDetails(context.UID))">Pod Details</MudButton></MudTd>
-        <MudTd DataLabel="Name">@context.Name</MudTd>
-        <MudTd DataLabel="Namespace">@context.Namespace</MudTd>
-        <MudTd DataLabel="UID">@context.UID</MudTd>
-        <MudTd DataLabel="PodIP">@context.PodIP</MudTd>
-        <MudTd DataLabel="StartTime">@context.StartTime</MudTd>
-        <MudTd DataLabel="CreatedTime">@context.CreatedTime</MudTd>
-        <MudTd DataLabel="Status">@context.Status</MudTd>
-        <MudTd DataLabel="Readiness">@context.Readiness</MudTd>
+        <MudTd><MudButton Variant="Variant.Outlined" Size="MudBlazor.Size.Small" OnClick="@(() => NavigatePodDetails(@context.Metadata.Name))">Pod Details</MudButton></MudTd>
+        <MudTd DataLabel="Name">@context.Metadata.Name</MudTd>
+        <MudTd DataLabel="UID">@context.Metadata.Uid</MudTd>
+        <MudTd DataLabel="CreatedTime">@context.Metadata.CreationTimestamp</MudTd>
+        @if (context.Status.ContainerStatuses[0].State.Running != null)
+        {
+            <MudTd DataLabel="Status">Running</MudTd>
+        }
+        @if (context.Status.ContainerStatuses[0].State.Terminated != null)
+        {
+            <MudTd DataLabel="Status">Terminated</MudTd>
+        }
+        @if (context.Status.ContainerStatuses[0].State.Waiting != null)
+        {
+            <MudTd DataLabel="Status">Waiting</MudTd>
+        }
+        
     </RowTemplate>
-
 </MudTable>
 
+<MudOverlay @bind-visible="isVisible" DarkBackground="true">
+    <MudProgressCircular Color="MudBlazor.Color.Secondary" Indeterminate="true" />
+</MudOverlay>
 
 @code
 {
-    [Inject]
-    private IState<KubeStateState> KubeStateState { get; set; }
+
+    private static List<V1Pod> PodList { get; set; } = new List<V1Pod>() ;
+
+    private bool isVisible;
 
     protected override void OnInitialized()
     {
+        ToggleOverlay(true);
         LoadPods();
+        ToggleOverlay(false);
         base.OnInitialized();
     }
 
-    private void LoadPods()
+    private async Task LoadPods()
     {
-        if (KubeStateState.Value.KubeState != null)
+
+
+        var pods = await KubernetesService.GetPods("default");
+        if (pods.Items != null)
         {
-            PodList = KubeStateState.Value.KubeState.Pods;
+            PodList = pods.Items.ToList();
         }
+        StateHasChanged();
+        //if (KubeStateState.Value.KubeState != null)
+        //{
+        //    PodList = KubeStateState.Value.KubeState.Pods;
+        //}
     }
-    private static IEnumerable<Pod> PodList { get; set; }
+    //private static IEnumerable<Pod> PodList { get; set; }
 
-    private void NavigatePodDetails(string uid)
+    private void NavigatePodDetails(string name)
     {
-        NavigationManager.NavigateTo($"/poddetail/{uid}");
+        NavigationManager.NavigateTo($"/poddetail/{name}");
     }
-
+    private void ToggleOverlay(bool visible)
+    {
+        isVisible = visible;
+        StateHasChanged();
+    }
 }

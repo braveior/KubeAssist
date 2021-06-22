@@ -7,90 +7,70 @@
 
 
 <MudText Typo="Typo.h4">Service Details</MudText>
-<MudGrid>
-    <MudItem lg="4">
-        <MudTextField @bind-Value="Service.Name" Label="Name" Variant="Variant.Text" Margin="Margin.Dense" />
-    </MudItem>
-    <MudItem lg="4">
-        <MudTextField @bind-Value="Service.Namespace" Label="Namespace" Variant="Variant.Text" Margin="Margin.Dense" />
-    </MudItem>
-    <MudItem lg="4">
-        <MudTextField @bind-Value="Service.ServiceType" Label="Service Type" Variant="Variant.Text" Margin="Margin.Dense" />
-    </MudItem>
-
-    <MudItem lg="4">
-        <MudTextField @bind-Value="Service.ClusterIP" Label="Cluster IP" Variant="Variant.Text" Margin="Margin.Dense" />
-    </MudItem>
-    <MudItem lg="4">
-        <MudTextField @bind-Value="Service.CreatedDate" Label="Created Date" Variant="Variant.Text" Margin="Margin.Dense" />
-    </MudItem>
-    <MudItem lg="4">
-        <MudTextField @bind-Value="Service.LoadBalancerIP" Label="Load Balancer IP" Variant="Variant.Text" Margin="Margin.Dense" />
-    </MudItem>
-
-    <MudItem lg="12">
-        <MudText Typo="Typo.h4">Labels</MudText>
-    </MudItem>
-    <MudItem lg="12">
-        <div Class="d-flex flex-row py-2 px-1">
-            @foreach (var label in Service.Labels)
-            {
-                <MudChip Color="Color.Primary" Variant="Variant.Outlined" Size="MudBlazor.Size.Medium">@label.Name | @label.Value</MudChip>
-            }
-        </div>
-    </MudItem>
-
-</MudGrid>
-
-
-
-@code
+@if (Service.Metadata != null)
 {
-    [Parameter]
-    public string Name { get; set; }
+    <MudGrid>
+        <MudItem lg="4">
+            <MudTextField @bind-Value="Service.Metadata.Name" Label="Name" Variant="Variant.Text" Margin="Margin.Dense" />
+        </MudItem>
+        <MudItem lg="4">
+            <MudTextField @bind-Value="Service.Metadata.NamespaceProperty" Label="Namespace" Variant="Variant.Text" Margin="Margin.Dense" />
+        </MudItem>
+        <MudItem lg="4">
+            <MudTextField @bind-Value="Service.Spec.Type" Label="Service Type" Variant="Variant.Text" Margin="Margin.Dense" />
+        </MudItem>
 
-    private Service Service { get; set; }
+        <MudItem lg="4">
+            <MudTextField @bind-Value="Service.Spec.ClusterIP" Label="Cluster IP" Variant="Variant.Text" Margin="Margin.Dense" />
+        </MudItem>
+        <MudItem lg="4">
+            <MudTextField @bind-Value="Service.Metadata.CreationTimestamp" Label="Created Date" Variant="Variant.Text" Margin="Margin.Dense" />
+        </MudItem>
+        <MudItem lg="4">
+            <MudTextField @bind-Value="Service.Spec.LoadBalancerIP" Label="Load Balancer IP" Variant="Variant.Text" Margin="Margin.Dense" />
+        </MudItem>
+
+        <MudItem lg="12">
+            <MudText Typo="Typo.h4">Labels</MudText>
+        </MudItem>
+        @*<MudItem lg="12">
+                <div Class="d-flex flex-row py-2 px-1">
+                    @foreach (var label in Service.Labels)
+                    {
+                        <MudChip Color="Color.Primary" Variant="Variant.Outlined" Size="MudBlazor.Size.Medium">@label.Name | @label.Value</MudChip>
+                    }
+                </div>
+            </MudItem>*@
+
+    </MudGrid>
+}
 
 
-    [Inject]
-    private IState<KubeStateState> KubeStateState { get; set; }
+    @code
+{
+        [Parameter]
+        public string Name { get; set; }
 
-    Queue<System.Drawing.Color> SysColors { get; set; } = new Queue<System.Drawing.Color>();
 
-    private void BuildSysColorsQueue()
+protected override void OnInitialized()
     {
-        SysColors.Enqueue(System.Drawing.Color.Red);
-        SysColors.Enqueue(System.Drawing.Color.Blue);
-        SysColors.Enqueue(System.Drawing.Color.Green);
-        SysColors.Enqueue(System.Drawing.Color.Orange);
-        SysColors.Enqueue(System.Drawing.Color.Violet);
-        SysColors.Enqueue(System.Drawing.Color.Black);
-        SysColors.Enqueue(System.Drawing.Color.Aqua);
-        SysColors.Enqueue(System.Drawing.Color.Chocolate);
-        SysColors.Enqueue(System.Drawing.Color.Turquoise);
-    }
 
-    protected override void OnInitialized()
-    {
-
-        BuildSysColorsQueue();
         LoadServiceDetail();
         base.OnInitialized();
     }
-    private void LoadServiceDetail()
+    private async Task LoadServiceDetail()
     {
-        if (KubeStateState.Value.KubeState != null)
-        {
-            Service = KubeStateState.Value.KubeState.Services.Where(a => a.Name.Equals(Name)).FirstOrDefault();
-        }
-    }
-    private static IEnumerable<KNode> NodesList { get; set; }
 
-    private System.Drawing.Color GetNextSystemColor()
-    {
-        var color = SysColors.Dequeue();
-        SysColors.Enqueue(color);
-        return color;
-    }
+        Service = await KubernetesService.GetService(Name, "default");
 
-}
+        StateHasChanged();
+        //if (KubeStateState.Value.KubeState != null)
+        //{
+        //    Service = KubeStateState.Value.KubeState.Services.Where(a => a.Name.Equals(Name)).FirstOrDefault();
+        //}
+    }
+    private V1Service Service { get; set; } = new V1Service();
+
+
+
+    }

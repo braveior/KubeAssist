@@ -1,48 +1,49 @@
-﻿@page "/poddetail/{uid}"
+﻿@page "/poddetail/{Name}"
 @using System.Text;
 @using ChartJs.Blazor.PieChart
 @using Braveior.KubeAssist.Services
 @using Braveior.KubeAssist.Services.Models
+@using Braveior.KubeAssist.Pages
 @inject KubernetesService KubernetesService
 @inject IDialogService DialogService
 
 
 <MudText Typo="Typo.h4">Pod Details</MudText>
+@if (Pod.Metadata != null)
+{
 <MudGrid>
     <MudItem lg="4">
-        <MudTextField @bind-Value="Pod.Name" Label="Name" Variant="Variant.Text" Margin="Margin.Dense" />
+        <MudTextField @bind-Value="Pod.Metadata.Name" Label="Name" Variant="Variant.Text" Margin="Margin.Dense" />
     </MudItem>
     <MudItem lg="4">
-        <MudTextField @bind-Value="Pod.Namespace" Label="Namespace" Variant="Variant.Text" Margin="Margin.Dense" />
+        <MudTextField @bind-Value="Pod.Metadata.NamespaceProperty" Label="Namespace" Variant="Variant.Text" Margin="Margin.Dense" />
     </MudItem>
     <MudItem lg="4">
-        <MudTextField @bind-Value="Pod.NodeName" Label="Node Name" Variant="Variant.Text" Margin="Margin.Dense" />
+        <MudTextField @bind-Value="Pod.Spec.NodeName" Label="Node Name" Variant="Variant.Text" Margin="Margin.Dense" />
     </MudItem>
 
     <MudItem lg="4">
-        <MudTextField @bind-Value="Pod.UID" Label="UID" Variant="Variant.Text" Margin="Margin.Dense" />
+        <MudTextField @bind-Value="Pod.Metadata.Uid" Label="UID" Variant="Variant.Text" Margin="Margin.Dense" />
     </MudItem>
     <MudItem lg="4">
-        <MudTextField @bind-Value="Pod.HostIP" Label="Host IP" Variant="Variant.Text" Margin="Margin.Dense" />
+        <MudTextField @bind-Value="Pod.Status.HostIP" Label="Host IP" Variant="Variant.Text" Margin="Margin.Dense" />
     </MudItem>
     <MudItem lg="4">
-        <MudTextField @bind-Value="Pod.PodIP" Label="Pod IP" Variant="Variant.Text" Margin="Margin.Dense" />
+        <MudTextField @bind-Value="Pod.Status.PodIP" Label="Pod IP" Variant="Variant.Text" Margin="Margin.Dense" />
     </MudItem>
 
-    <MudItem lg="3">
-        <MudTextField @bind-Value="Pod.CreatedTime" Label="Created Time" Variant="Variant.Text" Margin="Margin.Dense" />
+    <MudItem lg="4">
+        <MudTextField @bind-Value="Pod.Metadata.CreationTimestamp" Label="Created Time" Variant="Variant.Text" Margin="Margin.Dense" />
     </MudItem>
-    <MudItem lg="3">
-        <MudTextField @bind-Value="Pod.StartTime" Label="Start Time" Variant="Variant.Text" Margin="Margin.Dense" />
+    <MudItem lg="4">
+        <MudTextField @bind-Value="Pod.Status.StartTime" Label="Start Time" Variant="Variant.Text" Margin="Margin.Dense" />
     </MudItem>
-    <MudItem lg="3">
-        <MudTextField @bind-Value="Pod.Readiness" Label="Readiness" Variant="Variant.Text" Margin="Margin.Dense" />
+    <MudItem lg="4">
+        <MudTextField @bind-Value="Pod.Status.StartTime" Label="Status" Variant="Variant.Text" Margin="Margin.Dense" />
     </MudItem>
-    <MudItem lg="3">
-        <MudTextField @bind-Value="Pod.Status" Label="Status" Variant="Variant.Text" Margin="Margin.Dense" />
-    </MudItem>
+
     <MudItem lg="12">
-        <MudButton Variant="Variant.Outlined" Size="MudBlazor.Size.Small" OnClick="@(() => ViewLogs(Pod.Name,Pod.Namespace))">Logs</MudButton>
+        <MudButton Variant="Variant.Outlined" Size="MudBlazor.Size.Small" OnClick="@(() => ViewLogs(Pod.Name(), Pod.Namespace()))">Logs</MudButton>
     </MudItem>
     <MudItem lg="12">
         <MudText Typo="Typo.h4">CPU and Memory Trend</MudText>
@@ -67,87 +68,22 @@
     <MudItem lg="12">
         <MudText Typo="Typo.h4">Labels</MudText>
     </MudItem>
-    <MudItem lg="12">
-        <div Class="d-flex flex-row py-2 px-1">
-            @foreach (var label in Pod.Labels)
-            {
-                <MudChip Color="Color.Primary" Variant="Variant.Outlined" Size="MudBlazor.Size.Medium">@label.Name | @label.Value</MudChip>
-            }
-        </div>
-    </MudItem>
-    @foreach (var container in Pod.Containers)
-    {
-        <MudItem lg="12">
-            <MudText Typo="Typo.h4">Container - @container.Name</MudText>
-        </MudItem>
-        <MudItem lg="4">
-            <MudTextField @bind-Value="container.Name" Label="Name" Variant="Variant.Text" Margin="Margin.Dense" />
-        </MudItem>
-        <MudItem lg="4">
-            <MudTextField @bind-Value="container.ContainerId" Label="Id" Variant="Variant.Text" Margin="Margin.Dense" />
-        </MudItem>
-        <MudItem lg="4">
-            <MudTextField @bind-Value="container.Readiness" Label="Readiness" Variant="Variant.Text" Margin="Margin.Dense" />
-        </MudItem>
-        <MudItem lg="4">
-            <MudTextField @bind-Value="container.Image" Label="Image" Variant="Variant.Text" Margin="Margin.Dense" />
-        </MudItem>
-        <MudItem lg="4">
-            <MudTextField @bind-Value="container.ImageId" Label="Image Id" Variant="Variant.Text" Margin="Margin.Dense" />
-        </MudItem>
-        <MudItem lg="4">
-            <MudTextField @bind-Value="container.Status" Label="Status" Variant="Variant.Text" Margin="Margin.Dense" />
-        </MudItem>
 
-        <MudItem lg="12">
-            <MudText Typo="Typo.h4">Resource Requests and Limits</MudText>
-        </MudItem>
-
-
-        <MudItem lg="3">
-            <MudPaper Class="mt-16" Elevation="1">
-                <MudText Align="Align.Center" Typo="Typo.h6">CPU Request</MudText>
-                <MudText Align="Align.Center" Typo="Typo.h4">@container.CPUResourceRequests m</MudText>
-            </MudPaper>
-        </MudItem>
-        <MudItem lg="3">
-            <MudPaper Class="mt-16" Elevation="1">
-                <MudText Align="Align.Center" Typo="Typo.h6">Memory Request</MudText>
-                <MudText Align="Align.Center" Typo="Typo.h4">@container.MemoryResourceRequests Kib</MudText>
-            </MudPaper>
-        </MudItem>
-        <MudItem lg="3">
-            <MudPaper Class="mt-16" Elevation="1">
-                <MudText Align="Align.Center" Typo="Typo.h6">CPU Limit</MudText>
-                <MudText Align="Align.Center" Typo="Typo.h4">@container.CPUResourceLimits m</MudText>
-            </MudPaper>
-        </MudItem>
-        <MudItem lg="3">
-            <MudPaper Class="mt-16" Elevation="1">
-                <MudText Align="Align.Center" Typo="Typo.h6">Memory Limit</MudText>
-                <MudText Align="Align.Center" Typo="Typo.h4">@container.MemoryResourceLimits Kib</MudText>
-            </MudPaper>
-        </MudItem>
-
-    }
+   
 </MudGrid>
 
-
+}
 
 @code
 {
     [Parameter]
-    public string UID { get; set; }
+    public string Name { get; set; }
 
-    private Pod Pod { get; set; }
+    private V1Pod Pod { get; set; } = new V1Pod();
 
     private LineConfig configContainerCPU;
 
     private LineConfig configContainerMemory;
-
-
-    [Inject]
-    private IState<KubeStateState> KubeStateState { get; set; }
 
     Queue<System.Drawing.Color> SysColors { get; set; } = new Queue<System.Drawing.Color>();
 
@@ -174,14 +110,16 @@
         GenerateContainerCharts("7");
         base.OnInitialized();
     }
-    private void LoadPod()
+    private async Task LoadPod()
     {
-        if (KubeStateState.Value.KubeState != null)
-        {
-            Pod = KubeStateState.Value.KubeState.Pods.Where(a => a.UID.Equals(UID)).FirstOrDefault();
-        }
+        Pod = await KubernetesService.GetPod(Name, "default");
+        StateHasChanged();
+
+        //if (KubeStateState.Value.KubeState != null)
+        //{
+        //    Pod = KubeStateState.Value.KubeState.Pods.Where(a => a.UID.Equals(UID)).FirstOrDefault();
+        //}
     }
-    private static IEnumerable<KNode> NodesList { get; set; }
 
     private void GenerteMonthContainerChart()
     {
@@ -199,12 +137,12 @@
     {
         configContainerCPU.Data.Datasets.Clear();
         configContainerMemory.Data.Datasets.Clear();
-        var metricResult = KubernetesService.GetPodMetricResult(Pod.Name, day);
+        var metricResult = KubernetesService.GetPodMetricResult(Pod.Name(), day);
 
         var datasetCpu = new LineDataset<double>
             ()
         {
-            Label = Pod.Name,
+            Label = Pod.Name(),
             BackgroundColor = ColorUtil.FromDrawingColor(System.Drawing.Color.FromArgb(128, GetNextSystemColor())),
             BorderColor = ColorUtil.FromDrawingColor(GetNextSystemColor()),
             BorderWidth = 1,
@@ -213,7 +151,7 @@
         var datasetMemory = new LineDataset<double>
             ()
         {
-            Label = Pod.Name,
+            Label = Pod.Name(),
             BackgroundColor = ColorUtil.FromDrawingColor(System.Drawing.Color.FromArgb(128, GetNextSystemColor())),
             BorderColor = ColorUtil.FromDrawingColor(GetNextSystemColor()),
             BorderWidth = 1,
@@ -283,6 +221,17 @@
             }
         };
         return config;
+    }
+    private string GetPodStatus(V1Pod pod)
+    {
+        if (pod.Status.ContainerStatuses[0].State.Running != null)
+            return "Running";
+        else if (pod.Status.ContainerStatuses[0].State.Terminated != null)
+            return "Terminated";
+        else if (pod.Status.ContainerStatuses[0].State.Waiting != null)
+            return "Waiting";
+        else
+            return "UnKnown";
     }
     private void ViewLogs(string name, string ns)
     {

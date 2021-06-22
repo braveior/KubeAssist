@@ -13,25 +13,23 @@
         <MudTh>Kubelet Version</MudTh>
         <MudTh>Kube Proxy Version</MudTh>
         <MudTh>Created Date</MudTh>
-        <MudTh>Readiness</MudTh>
         <MudTh>Memory</MudTh>
         <MudTh>No of Pods</MudTh>
         <MudTh>CPU Core</MudTh>
         <MudTh>Storage</MudTh>
     </HeaderContent>
     <RowTemplate>
-        <MudTd DataLabel="Name">@context.Name</MudTd>
-        <MudTd DataLabel="KernelVersion">@context.KernalVersion</MudTd>
-        <MudTd DataLabel="OSImage">@context.OSImage</MudTd>
-        <MudTd DataLabel="ContainerRuntimeVersion">@context.containerRuntimeVersion</MudTd>
-        <MudTd DataLabel="KubeletVersion">@context.KubeletVersion</MudTd>
-        <MudTd DataLabel="KubeProxyVersion">@context.KubeProxyVersion</MudTd>
-        <MudTd DataLabel="CreatedDate">@context.CreatedDate</MudTd>
-        <MudTd DataLabel="Readiness">@context.Readiness</MudTd>
-        <MudTd DataLabel="Memory">@context.Memory</MudTd>
-        <MudTd DataLabel="NoOfPods">@context.NoOfPods</MudTd>
-        <MudTd DataLabel="CPUCore">@context.CPUCore</MudTd>
-        <MudTd DataLabel="Storage">@context.Storage</MudTd>
+        <MudTd DataLabel="Name">@context.Metadata.Name</MudTd>
+        <MudTd DataLabel="KernelVersion">@context.Status.NodeInfo.KernelVersion</MudTd>
+        <MudTd DataLabel="OSImage">@context.Status.NodeInfo.OsImage</MudTd>
+        <MudTd DataLabel="ContainerRuntimeVersion">@context.Status.NodeInfo.ContainerRuntimeVersion</MudTd>
+        <MudTd DataLabel="KubeletVersion">@context.Status.NodeInfo.KubeletVersion</MudTd>
+        <MudTd DataLabel="KubeProxyVersion">@context.Status.NodeInfo.KubeProxyVersion</MudTd>
+        <MudTd DataLabel="CreatedDate">@context.Metadata.CreationTimestamp</MudTd>
+        <MudTd DataLabel="Memory">@context.Status.Capacity["memory"]</MudTd>
+        <MudTd DataLabel="NoOfPods">@context.Status.Capacity["pods"]</MudTd>
+        <MudTd DataLabel="CPUCore">@context.Status.Capacity["cpu"]</MudTd>
+        <MudTd DataLabel="Storage">@context.Status.Capacity["ephemeral-storage"]</MudTd>
     </RowTemplate>
  </MudTable>
 
@@ -39,24 +37,27 @@
 @code
 {
 
-    [Inject]
-    private IState<KubeStateState> KubeStateState { get; set; }
-
     protected override void OnInitialized()
     {
         LoadNodes();
         base.OnInitialized();
     }
 
-    private void LoadNodes()
+    private async Task LoadNodes()
     {
-        if (KubeStateState.Value.KubeState != null)
+        var nodes = await KubernetesService.GetNodes();
+        if (nodes.Items != null)
         {
-            NodesList = KubeStateState.Value.KubeState.NodeDetails;
+            NodesList = nodes.Items.ToList();
         }
+        StateHasChanged();
+        //if (KubeStateState.Value.KubeState != null)
+        //{
+        //    NodesList = KubeStateState.Value.KubeState.NodeDetails;
+        //}
 
     }
-    private static IEnumerable<KNode> NodesList { get; set; }
+    private static List<V1Node> NodesList { get; set; }
 
 
 }

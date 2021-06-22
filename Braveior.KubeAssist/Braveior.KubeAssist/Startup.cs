@@ -28,12 +28,12 @@ namespace Braveior.KubeAssist
         {
             services.AddRazorPages();
             services.AddServerSideBlazor().AddCircuitOptions(options => { options.DetailedErrors = true; }); ;
-            services.AddSingleton<WeatherForecastService>();
             services.AddSingleton<KubernetesService>();
             //Adds the Mud Blazor support to Blazor
             services.AddMudServices();
             var currentAssembly = typeof(Startup).Assembly;
             services.AddFluxor(options => options.ScanAssemblies(currentAssembly));
+            services.AddHostedService<Agent>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

@@ -4,15 +4,14 @@ using System.Text;
 
 namespace Braveior.KubeAssist.Services.Models
 {
-    public class PersistentVolume
+    public class NodeMetric
     {
         public string Name { get; set; }
+        
+        public int CPU { get; set; }
 
-        public string StorageClass { get; set; }
+        public int Memory { get; set; }
 
-        public string Phase { get; set; }
-
-        public string Capacity { get; set; }
-
+        public DateTime TimeStamp { get; set; }
     }
 }

@@ -4,135 +4,129 @@
 @using Braveior.KubeAssist.Services.Models
 @inject KubernetesService KubernetesService
 @inject IDialogService DialogService
-@implements IDisposable;
 
 <MudText Typo="Typo.h4">Statefulset Details</MudText>
-<MudGrid>
-    <MudItem lg="4">
-        <MudTextField @bind-Value="Statefulset.Name" Label="Name" Variant="Variant.Text" Margin="Margin.Dense" />
-    </MudItem>
-    <MudItem lg="4">
-        <MudTextField @bind-Value="Statefulset.Namespace" Label="Namespace" Variant="Variant.Text" Margin="Margin.Dense" />
-    </MudItem>
-    <MudItem lg="4">
-        <MudTextField @bind-Value="Statefulset.NoOfReplicas" Label="No of Replicas" Variant="Variant.Text" Margin="Margin.Dense" />
-    </MudItem>
-
-    <MudItem lg="4">
-        <MudTextField @bind-Value="Statefulset.CurrentReplicas" Label="Current Replicas" Variant="Variant.Text" Margin="Margin.Dense" />
-    </MudItem>
-    <MudItem lg="4">
-        <MudTextField @bind-Value="Statefulset.ReadyReplicas" Label="Ready Replicas" Variant="Variant.Text" Margin="Margin.Dense" />
-    </MudItem>
-    <MudItem lg="4">
-        <MudTextField @bind-Value="Statefulset.UpdatedReplicas" Label="Updated Replicas" Variant="Variant.Text" Margin="Margin.Dense" />
-    </MudItem>
-
-    <MudItem lg="6">
-        <MudTextField @bind-Value="Statefulset.NoOfDesiredPods" Label="No of desired Pods" Variant="Variant.Text" Margin="Margin.Dense" />
-    </MudItem>
-    <MudItem lg="6">
-        <MudTextField @bind-Value="Statefulset.UpdatedReplicas" Label="Created Date" Variant="Variant.Text" Margin="Margin.Dense" />
-    </MudItem>
-
-
-
-
-    <MudItem lg="12">
-        <MudText Typo="Typo.h4">Labels</MudText>
-    </MudItem>
-    <MudItem lg="12">
-        <div Class="d-flex flex-row py-2 px-1">
-            <MudChipSet Filter="true" SelectedChipChanged="MatchPods">
-                @foreach (var label in Statefulset.Labels)
-                {
-                    <MudChip Text="@(label.Name + "|"  + label.Value)" Color="Color.Primary" Variant="Variant.Outlined" Size="MudBlazor.Size.Medium"></MudChip>
-                }
-            </MudChipSet>
-        </div>
-    </MudItem>
-
-    <MudItem lg="12">
-        <MudText Typo="Typo.h4">Label Matching Pods</MudText>
-    </MudItem>
-
-    <MudTable Dense="true" Items="@PodList" Hover="true" Breakpoint="Breakpoint.Sm">
-        <HeaderContent>
-            <MudTh>Name</MudTh>
-            <MudTh>Namespace</MudTh>
-            <MudTh>UID</MudTh>
-            <MudTh>PodIP</MudTh>
-            <MudTh>StartTime</MudTh>
-            <MudTh>CreatedTime</MudTh>
-            <MudTh>Status</MudTh>
-            <MudTh>Readiness</MudTh>
-        </HeaderContent>
-        <RowTemplate>
-            <MudTd DataLabel="Name">@context.Name</MudTd>
-            <MudTd DataLabel="Namespace">@context.Namespace</MudTd>
-            <MudTd DataLabel="UID">@context.UID</MudTd>
-            <MudTd DataLabel="PodIP">@context.PodIP</MudTd>
-            <MudTd DataLabel="StartTime">@context.StartTime</MudTd>
-            <MudTd DataLabel="CreatedTime">@context.CreatedTime</MudTd>
-            <MudTd DataLabel="Status">@context.Status</MudTd>
-            <MudTd DataLabel="Readiness">@context.Readiness</MudTd>
-        </RowTemplate>
-
-    </MudTable>
-
-</MudGrid>
-
-
-
-@code
+@if (Statefulset.Metadata != null)
 {
-    [Parameter]
-    public string Name { get; set; }
+    <MudGrid>
+        <MudItem lg="4">
+            <MudTextField @bind-Value="Statefulset.Metadata.Name" Label="Name" Variant="Variant.Text" Margin="Margin.Dense" />
+        </MudItem>
+        <MudItem lg="4">
+            <MudTextField @bind-Value="Statefulset.Metadata.NamespaceProperty" Label="Namespace" Variant="Variant.Text" Margin="Margin.Dense" />
+        </MudItem>
+        <MudItem lg="4">
+            <MudTextField @bind-Value="Statefulset.Status.Replicas" Label="No of Replicas" Variant="Variant.Text" Margin="Margin.Dense" />
+        </MudItem>
 
-    private StatefulSet Statefulset { get; set; }
+        <MudItem lg="3">
+            <MudTextField @bind-Value="Statefulset.Status.CurrentReplicas" Label="Current Replicas" Variant="Variant.Text" Margin="Margin.Dense" />
+        </MudItem>
+        <MudItem lg="3">
+            <MudTextField @bind-Value="Statefulset.Status.ReadyReplicas" Label="Ready Replicas" Variant="Variant.Text" Margin="Margin.Dense" />
+        </MudItem>
+        <MudItem lg="3">
+            <MudTextField @bind-Value="Statefulset.Status.UpdatedReplicas" Label="Updated Replicas" Variant="Variant.Text" Margin="Margin.Dense" />
+        </MudItem>
 
-    //MudChip SelectedLabel;
-
-    private IEnumerable<Pod> PodList { get; set; } = new List<Pod>();
-
-
-    [Inject]
-    private IState<KubeStateState> KubeStateState { get; set; }
+        <MudItem lg="3">
+            <MudTextField @bind-Value="Statefulset.Metadata.CreationTimestamp" Label="Created Date" Variant="Variant.Text" Margin="Margin.Dense" />
+        </MudItem>
 
 
-    protected override void OnInitialized()
-    {
-        LoadStatefulsetDetail();
-        base.OnInitialized();
-    }
-    private void LoadStatefulsetDetail()
-    {
-        if (KubeStateState.Value.KubeState != null)
-        {
-            Statefulset = KubeStateState.Value.KubeState.StatefulSets.Where(a => a.Name.Equals(Name)).FirstOrDefault();
-        }
-    }
-    public void MatchPods(MudChip SelectedLabel)
-    {
-        if (SelectedLabel != null && SelectedLabel.Text != null)
-        {
-            if (KubeStateState.Value.KubeState != null)
-            {
-                PodList = KubeStateState.Value.KubeState.Pods;
-                PodList = PodList.Where(a => a.Labels.Any(b => CheckLabel(b, SelectedLabel.Text.Split("|")[0], SelectedLabel.Text.Split("|")[1])));
-            }
-        }
-    }
-    private bool CheckLabel(Label label, string name, string value)
-    {
-        if (label.Name.Equals(name) && label.Value.Equals(value))
-            return true;
-        else
-            return false;
-    }
-    public void Dispose()
-    {
-        PodList = null;
-    }
+
+
+        @*<MudItem lg="12">
+                <MudText Typo="Typo.h4">Labels</MudText>
+            </MudItem>
+            <MudItem lg="12">
+                <div Class="d-flex flex-row py-2 px-1">
+                    <MudChipSet Filter="true" SelectedChipChanged="MatchPods">
+                        @foreach (var label in Statefulset.Labels)
+                        {
+                            <MudChip Text="@(label.Name + "|"  + label.Value)" Color="Color.Primary" Variant="Variant.Outlined" Size="MudBlazor.Size.Medium"></MudChip>
+                        }
+                    </MudChipSet>
+                </div>
+            </MudItem>*@
+
+        @*<MudItem lg="12">
+                <MudText Typo="Typo.h4">Label Matching Pods</MudText>
+            </MudItem>
+
+            <MudTable Dense="true" Items="@PodList" Hover="true" Breakpoint="Breakpoint.Sm">
+                <HeaderContent>
+                    <MudTh>Name</MudTh>
+                    <MudTh>Namespace</MudTh>
+                    <MudTh>UID</MudTh>
+                    <MudTh>PodIP</MudTh>
+                    <MudTh>StartTime</MudTh>
+                    <MudTh>CreatedTime</MudTh>
+                    <MudTh>Status</MudTh>
+                    <MudTh>Readiness</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="Name">@context.Name</MudTd>
+                    <MudTd DataLabel="Namespace">@context.Namespace</MudTd>
+                    <MudTd DataLabel="UID">@context.UID</MudTd>
+                    <MudTd DataLabel="PodIP">@context.PodIP</MudTd>
+                    <MudTd DataLabel="StartTime">@context.StartTime</MudTd>
+                    <MudTd DataLabel="CreatedTime">@context.CreatedTime</MudTd>
+                    <MudTd DataLabel="Status">@context.Status</MudTd>
+                    <MudTd DataLabel="Readiness">@context.Readiness</MudTd>
+                </RowTemplate>
+
+            </MudTable>*@
+
+    </MudGrid>
 
 }
+
+    @code
+{
+        [Parameter]
+        public string Name { get; set; }
+
+        private V1StatefulSet Statefulset { get; set; } = new V1StatefulSet();
+
+        //MudChip SelectedLabel;
+
+        // private List<Pod> PodList { get; set; } = new List<Pod>();
+
+
+        protected override void OnInitialized()
+        {
+            LoadStatefulsetDetail();
+            base.OnInitialized();
+        }
+        private async Task LoadStatefulsetDetail()
+        {
+            Statefulset = await KubernetesService.GetStatefulSet(Name, "default");
+
+            StateHasChanged();
+            //if (KubeStateState.Value.KubeState != null)
+            //{
+            //    Statefulset = KubeStateState.Value.KubeState.StatefulSets.Where(a => a.Name.Equals(Name)).FirstOrDefault();
+            //}
+        }
+        //public void MatchPods(MudChip SelectedLabel)
+        //{
+        //    if (SelectedLabel != null && SelectedLabel.Text != null)
+        //    {
+        //        if (KubeStateState.Value.KubeState != null)
+        //        {
+        //            PodList = KubeStateState.Value.KubeState.Pods;
+        //            PodList = PodList.Where(a => a.Labels.Any(b => CheckLabel(b, SelectedLabel.Text.Split("|")[0], SelectedLabel.Text.Split("|")[1])));
+        //        }
+        //    }
+        //}
+        //private bool CheckLabel(Label label, string name, string value)
+        //{
+        //    if (label.Name.Equals(name) && label.Value.Equals(value))
+        //        return true;
+        //    else
+        //        return false;
+        //}
+
+
+    }

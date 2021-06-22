@@ -2,12 +2,14 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace Braveior.KubeAssist.Agent
+namespace Braveior.KubeAssist.Services.Models
 {
-    public class ClusterMetric
+    public class PodMetric
     {
+
+        public string Namespace { get; set; }
+
         public string Name { get; set; }
-        
         public int CPU { get; set; }
 
         public long Memory { get; set; }

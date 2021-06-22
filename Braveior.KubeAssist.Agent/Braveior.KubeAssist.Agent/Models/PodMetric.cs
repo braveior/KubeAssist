@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace Braveior.KubeAssist.Agent
+namespace Braveior.KubeAssist.Agent.Models
 {
     public class PodMetric
     {
