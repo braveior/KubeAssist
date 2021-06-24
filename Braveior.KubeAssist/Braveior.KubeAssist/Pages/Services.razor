@@ -31,10 +31,13 @@
 
 @code
 {
-    protected override void OnInitialized()
+    private bool isVisible;
+    protected override async Task OnInitializedAsync()
     {
-        LoadServices();
-        base.OnInitialized();
+        ToggleOverlay(true);
+        await LoadServices();
+        ToggleOverlay(false);
+        await base.OnInitializedAsync();
     }
 
     private async Task LoadServices()
@@ -45,11 +48,6 @@
             ServiceList = services.Items.ToList();
         }
         StateHasChanged();
-        //if (KubeStateState.Value.KubeState != null)
-        //{
-
-        //    ServiceList = KubeStateState.Value.KubeState.Services;
-        //}
     }
     private static List<V1Service> ServiceList { get; set; } = new List<V1Service>();
 
@@ -57,5 +55,9 @@
     {
         NavigationManager.NavigateTo($"/servicedetail/{name}");
     }
-
+    private void ToggleOverlay(bool visible)
+    {
+        isVisible = visible;
+        StateHasChanged();
+    }
 }

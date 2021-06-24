@@ -35,7 +35,7 @@ namespace Braveior.KubeAssist.Services
 
             return searchResponse.Documents.FirstOrDefault();
         }
-        public MetricResult GetNamespaceMetricResult(string ns,string day)
+        public async Task<MetricResult> GetNamespaceMetricResult(string ns,string day)
         {
             var settings = new ConnectionConfiguration(new Uri("http://192.168.0.112:9200"))
             .RequestTimeout(TimeSpan.FromMinutes(2));
@@ -82,8 +82,8 @@ namespace Braveior.KubeAssist.Services
                 }
                 }
                 }";
-            var searchResponse = lc.Search<BytesResponse>
-            ("namespacemetrics-*", namespaceMetricsQueryTemplate.Replace("#NAMESPACE#", ns).Replace("#DAYS#", day)).Body;
+            var searchResponse =  (await lc.SearchAsync<BytesResponse>
+            ("namespacemetrics-*", namespaceMetricsQueryTemplate.Replace("#NAMESPACE#", ns).Replace("#DAYS#", day))).Body;
             string utfString = Encoding.UTF8.GetString(searchResponse, 0, searchResponse.Length);
             var jsonSettings = new JsonSerializerSettings
             {
@@ -92,7 +92,7 @@ namespace Braveior.KubeAssist.Services
             };
             return JsonConvert.DeserializeObject<MetricResult>(utfString, jsonSettings);
         }
-        public MetricResult GetPodMetricResult(string podName, string day)
+        public async Task<MetricResult> GetPodMetricResult(string podName, string day)
         {
             var settings = new ConnectionConfiguration(new Uri("http://192.168.0.112:9200"))
             .RequestTimeout(TimeSpan.FromMinutes(2));
@@ -138,8 +138,8 @@ namespace Braveior.KubeAssist.Services
             }
             }";
 
-            var searchResponse = lc.Search<BytesResponse>
-            ("podmetrics-*", podMetricsQueryTemplate.Replace("#PODNAME#", podName).Replace("#DAYS#", day)).Body;
+            var searchResponse =  (await lc.SearchAsync<BytesResponse>
+            ("podmetrics-*", podMetricsQueryTemplate.Replace("#PODNAME#", podName).Replace("#DAYS#", day))).Body;
             string utfString = Encoding.UTF8.GetString(searchResponse, 0, searchResponse.Length);
             var jsonSettings = new JsonSerializerSettings
             {

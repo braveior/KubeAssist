@@ -22,11 +22,11 @@
         {
             <MudTd DataLabel="Status">Running</MudTd>
         }
-        @if (context.Status.ContainerStatuses[0].State.Terminated != null)
+        else if (context.Status.ContainerStatuses[0].State.Terminated != null)
         {
             <MudTd DataLabel="Status">Terminated</MudTd>
         }
-        @if (context.Status.ContainerStatuses[0].State.Waiting != null)
+        else if (context.Status.ContainerStatuses[0].State.Waiting != null)
         {
             <MudTd DataLabel="Status">Waiting</MudTd>
         }
@@ -45,12 +45,12 @@
 
     private bool isVisible;
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
         ToggleOverlay(true);
-        LoadPods();
+        await LoadPods();
         ToggleOverlay(false);
-        base.OnInitialized();
+        await base.OnInitializedAsync();
     }
 
     private async Task LoadPods()
@@ -63,12 +63,8 @@
             PodList = pods.Items.ToList();
         }
         StateHasChanged();
-        //if (KubeStateState.Value.KubeState != null)
-        //{
-        //    PodList = KubeStateState.Value.KubeState.Pods;
-        //}
+
     }
-    //private static IEnumerable<Pod> PodList { get; set; }
 
     private void NavigatePodDetails(string name)
     {

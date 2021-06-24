@@ -24,9 +24,12 @@
 
 @code
 {
-    protected override void OnInitialized()
+    private bool isVisible;
+    protected override async Task OnInitializedAsync()
     {
-        LoadStorageClasses();
+        ToggleOverlay(true);
+        await LoadStorageClasses();
+        ToggleOverlay(false);
         base.OnInitialized();
     }
 
@@ -38,13 +41,13 @@
             SCList = storageclasses.Items.ToList();
         }
         StateHasChanged();
-        //if (KubeStateState.Value.KubeState != null)
-        //{
-
-        //    SCList = KubeStateState.Value.KubeState.StorageClasses;
-        //}
     }
     private static List<V1StorageClass> SCList { get; set; }
 
+    private void ToggleOverlay(bool visible)
+    {
+        isVisible = visible;
+        StateHasChanged();
+    }
 
 }

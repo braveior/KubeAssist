@@ -89,14 +89,10 @@
 
         private V1StatefulSet Statefulset { get; set; } = new V1StatefulSet();
 
-        //MudChip SelectedLabel;
 
-        // private List<Pod> PodList { get; set; } = new List<Pod>();
-
-
-        protected override void OnInitialized()
+        protected override async Task OnInitializedAsync()
         {
-            LoadStatefulsetDetail();
+            await LoadStatefulsetDetail();
             base.OnInitialized();
         }
         private async Task LoadStatefulsetDetail()
@@ -104,10 +100,6 @@
             Statefulset = await KubernetesService.GetStatefulSet(Name, "default");
 
             StateHasChanged();
-            //if (KubeStateState.Value.KubeState != null)
-            //{
-            //    Statefulset = KubeStateState.Value.KubeState.StatefulSets.Where(a => a.Name.Equals(Name)).FirstOrDefault();
-            //}
         }
         //public void MatchPods(MudChip SelectedLabel)
         //{

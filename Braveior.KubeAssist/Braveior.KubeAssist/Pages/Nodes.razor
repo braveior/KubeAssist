@@ -36,11 +36,15 @@
 
 @code
 {
+    private bool isVisible;
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
-        LoadNodes();
-        base.OnInitialized();
+        ToggleOverlay(true);
+        await LoadNodes();
+        ToggleOverlay(false);
+        await base.OnInitializedAsync();
+
     }
 
     private async Task LoadNodes()
@@ -51,13 +55,14 @@
             NodesList = nodes.Items.ToList();
         }
         StateHasChanged();
-        //if (KubeStateState.Value.KubeState != null)
-        //{
-        //    NodesList = KubeStateState.Value.KubeState.NodeDetails;
-        //}
 
     }
     private static List<V1Node> NodesList { get; set; }
 
+    private void ToggleOverlay(bool visible)
+    {
+        isVisible = visible;
+        StateHasChanged();
+    }
 
 }

@@ -43,16 +43,16 @@
     </MudItem>
 
     <MudItem lg="12">
-        <MudButton Variant="Variant.Outlined" Size="MudBlazor.Size.Small" OnClick="@(() => ViewLogs(Pod.Name(), Pod.Namespace()))">Logs</MudButton>
+        <MudButton Variant="Variant.Outlined" Size="MudBlazor.Size.Small" OnClick="@(() => ViewLogs(Pod.Metadata.Name, Pod.Metadata.NamespaceProperty))">Logs</MudButton>
     </MudItem>
     <MudItem lg="12">
         <MudText Typo="Typo.h4">CPU and Memory Trend</MudText>
     </MudItem>
     <MudItem lg="12">
         <MudButtonGroup Color="MudBlazor.Color.Primary" Variant="Variant.Outlined">
-            <MudButton @onclick="GenerteMonthContainerChart">Month</MudButton>
-            <MudButton @onclick="GenerteWeekContainerChart">Week</MudButton>
-            <MudButton @onclick="GenerteDayContainerChart">Day</MudButton>
+            <MudButton @onclick="GenerateMonthContainerChart">Month</MudButton>
+            <MudButton @onclick="GenerateWeekContainerChart">Week</MudButton>
+            <MudButton @onclick="GenerateDayContainerChart">Day</MudButton>
         </MudButtonGroup>
     </MudItem>
     <MudItem lg="6">
@@ -68,8 +68,70 @@
     <MudItem lg="12">
         <MudText Typo="Typo.h4">Labels</MudText>
     </MudItem>
+    <MudItem lg="12">
+        <div Class="d-flex flex-row py-2 px-1">
+            @foreach (var label in Pod.Metadata.Labels)
+            {
+                <MudChip Color="Color.Primary" Variant="Variant.Outlined" Size="MudBlazor.Size.Medium">@label.Key | @label.Value</MudChip>
+            }
+        </div>
+    </MudItem>
 
-   
+    @*@foreach (var container in Pod.Containers)
+    {
+        <MudItem lg="12">
+            <MudText Typo="Typo.h4">Container - @container.Name</MudText>
+        </MudItem>
+        <MudItem lg="4">
+            <MudTextField @bind-Value="container.Name" Label="Name" Variant="Variant.Text" Margin="Margin.Dense" />
+        </MudItem>
+        <MudItem lg="4">
+            <MudTextField @bind-Value="container.ContainerId" Label="Id" Variant="Variant.Text" Margin="Margin.Dense" />
+        </MudItem>
+        <MudItem lg="4">
+            <MudTextField @bind-Value="container.Readiness" Label="Readiness" Variant="Variant.Text" Margin="Margin.Dense" />
+        </MudItem>
+        <MudItem lg="4">
+            <MudTextField @bind-Value="container.Image" Label="Image" Variant="Variant.Text" Margin="Margin.Dense" />
+        </MudItem>
+        <MudItem lg="4">
+            <MudTextField @bind-Value="container.ImageId" Label="Image Id" Variant="Variant.Text" Margin="Margin.Dense" />
+        </MudItem>
+        <MudItem lg="4">
+            <MudTextField @bind-Value="container.Status" Label="Status" Variant="Variant.Text" Margin="Margin.Dense" />
+        </MudItem>
+
+    <MudItem lg="12">
+        <MudText Typo="Typo.h4">Resource Requests and Limits</MudText>
+    </MudItem>
+
+    <MudItem lg="3">
+        <MudPaper Class="mt-16" Elevation="1">
+            <MudText Align="Align.Center" Typo="Typo.h6">CPU Request</MudText>
+            <MudText Align="Align.Center" Typo="Typo.h4">@container.CPUResourceRequests m</MudText>
+        </MudPaper>
+    </MudItem>
+    <MudItem lg="3">
+        <MudPaper Class="mt-16" Elevation="1">
+            <MudText Align="Align.Center" Typo="Typo.h6">Memory Request</MudText>
+            <MudText Align="Align.Center" Typo="Typo.h4">@container.MemoryResourceRequests Kib</MudText>
+        </MudPaper>
+    </MudItem>
+    <MudItem lg="3">
+        <MudPaper Class="mt-16" Elevation="1">
+            <MudText Align="Align.Center" Typo="Typo.h6">CPU Limit</MudText>
+            <MudText Align="Align.Center" Typo="Typo.h4">@container.CPUResourceLimits m</MudText>
+        </MudPaper>
+    </MudItem>
+    <MudItem lg="3">
+        <MudPaper Class="mt-16" Elevation="1">
+            <MudText Align="Align.Center" Typo="Typo.h6">Memory Limit</MudText>
+            <MudText Align="Align.Center" Typo="Typo.h4">@container.MemoryResourceLimits Kib</MudText>
+        </MudPaper>
+    </MudItem>
+   }*@
+
+
 </MudGrid>
 
 }
@@ -81,9 +143,9 @@
 
     private V1Pod Pod { get; set; } = new V1Pod();
 
-    private LineConfig configContainerCPU;
+    private LineConfig configContainerCPU = new LineConfig();
 
-    private LineConfig configContainerMemory;
+    private LineConfig configContainerMemory = new LineConfig();
 
     Queue<System.Drawing.Color> SysColors { get; set; } = new Queue<System.Drawing.Color>();
 
@@ -100,47 +162,43 @@
         SysColors.Enqueue(System.Drawing.Color.Turquoise);
     }
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
 
         BuildSysColorsQueue();
-        LoadPod();
         configContainerCPU = GetLineChartConfig("Container CPU Trend");
         configContainerMemory = GetLineChartConfig("Container Memory Trend");
-        GenerateContainerCharts("7");
-        base.OnInitialized();
+        await LoadPod();
+        await GenerateContainerCharts("7");
+        StateHasChanged();
+        await base.OnInitializedAsync();
     }
     private async Task LoadPod()
     {
         Pod = await KubernetesService.GetPod(Name, "default");
         StateHasChanged();
 
-        //if (KubeStateState.Value.KubeState != null)
-        //{
-        //    Pod = KubeStateState.Value.KubeState.Pods.Where(a => a.UID.Equals(UID)).FirstOrDefault();
-        //}
     }
 
-    private void GenerteMonthContainerChart()
+    private async Task GenerateMonthContainerChart()
     {
-        GenerateContainerCharts("30");
+        await GenerateContainerCharts("30");
     }
-    private void GenerteWeekContainerChart()
+    private async Task GenerateWeekContainerChart()
     {
-        GenerateContainerCharts("7");
+        await GenerateContainerCharts("7");
     }
-    private void GenerteDayContainerChart()
+    private async Task GenerateDayContainerChart()
     {
-        GenerateContainerCharts("2");
+        await GenerateContainerCharts("2");
     }
-    private void GenerateContainerCharts(string day)
+    private async Task GenerateContainerCharts(string day)
     {
         configContainerCPU.Data.Datasets.Clear();
         configContainerMemory.Data.Datasets.Clear();
-        var metricResult = KubernetesService.GetPodMetricResult(Pod.Name(), day);
+        var metricResult = await KubernetesService.GetPodMetricResult(Pod.Metadata.Name, day);
 
-        var datasetCpu = new LineDataset<double>
-            ()
+        var datasetCpu = new LineDataset<double>()
         {
             Label = Pod.Name(),
             BackgroundColor = ColorUtil.FromDrawingColor(System.Drawing.Color.FromArgb(128, GetNextSystemColor())),
@@ -148,8 +206,7 @@
             BorderWidth = 1,
             Fill = FillingMode.Disabled
         };
-        var datasetMemory = new LineDataset<double>
-            ()
+        var datasetMemory = new LineDataset<double>()
         {
             Label = Pod.Name(),
             BackgroundColor = ColorUtil.FromDrawingColor(System.Drawing.Color.FromArgb(128, GetNextSystemColor())),
@@ -157,18 +214,21 @@
             BorderWidth = 1,
             Fill = FillingMode.Disabled
         };
-        var metrics = metricResult.aggregations.sales_over_time.buckets;
-        configContainerCPU.Data.Labels.Clear();
-        configContainerMemory.Data.Labels.Clear();
-        foreach (var metric in metrics)
+        if (metricResult.aggregations != null)
         {
-            datasetCpu.Add(metric.avg_cpu.value);
-            datasetMemory.Add(metric.avg_ram.value);
-            configContainerCPU.Data.Labels.Add(metric.key_as_string.ToShortDateString());
-            configContainerMemory.Data.Labels.Add(metric.key_as_string.ToShortDateString());
+            var metrics = metricResult.aggregations.sales_over_time.buckets;
+            configContainerCPU.Data.Labels.Clear();
+            configContainerMemory.Data.Labels.Clear();
+            foreach (var metric in metrics)
+            {
+                datasetCpu.Add(metric.avg_cpu.value);
+                datasetMemory.Add(metric.avg_ram.value);
+                configContainerCPU.Data.Labels.Add(metric.key_as_string.ToShortDateString());
+                configContainerMemory.Data.Labels.Add(metric.key_as_string.ToShortDateString());
+            }
+            configContainerCPU.Data.Datasets.Add(datasetCpu);
+            configContainerMemory.Data.Datasets.Add(datasetMemory);
         }
-        configContainerCPU.Data.Datasets.Add(datasetCpu);
-        configContainerMemory.Data.Datasets.Add(datasetMemory);
 
     }
     private System.Drawing.Color GetNextSystemColor()
@@ -236,7 +296,6 @@
     private void ViewLogs(string name, string ns)
     {
         var logs = KubernetesService.GetPodLogs(name, ns).Result;
-        //PodList = kubeState.Pods.Where(a => a.Readiness == "false");
         var parameters = new DialogParameters { ["LogText"] = logs };
         DialogOptions dialogOptions = new DialogOptions() { MaxWidth = MaxWidth.Large, FullWidth = true };
         var dialog = DialogService.Show<LogView>("Delete Server", parameters, dialogOptions);

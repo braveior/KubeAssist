@@ -128,7 +128,7 @@
         SysColors.Enqueue(System.Drawing.Color.Chocolate);
         SysColors.Enqueue(System.Drawing.Color.Turquoise);
     }
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
         ToggleOverlay(true);
         BuildSysColorsQueue();
@@ -137,18 +137,16 @@
         configClusterCPU = GetPieChartConfig("Cluster CPU");
         configClusterMemory = GetPieChartConfig("Cluster Memory");
         configClusterPods = GetPieChartConfig("Cluster Pods");
-        LoadDashboard(false);
-        base.OnInitialized();
+        await LoadDashboard(false);
         ToggleOverlay(false);
-        StateHasChanged();
+        await base.OnInitializedAsync();
 
     }
-    private void LoadDashboard(bool hardReload)
+    private async Task LoadDashboard(bool hardReload)
     {
-        GenerateNamespaceCharts("7");
-        GenerateClusterPieCharts();
-        LoadPods();
-        StateHasChanged();
+        await GenerateNamespaceCharts("7");
+        await GenerateClusterPieCharts();
+        await LoadPods();
     }
     private System.Drawing.Color GetNextSystemColor()
     {
@@ -156,26 +154,26 @@
         SysColors.Enqueue(color);
         return color;
     }
-    private void GenerteMonthNSChart()
+    private async Task GenerteMonthNSChart()
     {
-        GenerateNamespaceCharts("30");
+        await GenerateNamespaceCharts("30");
     }
-    private void GenerteWeekNSChart()
+    private async Task GenerteWeekNSChart()
     {
-        GenerateNamespaceCharts("14");
+        await GenerateNamespaceCharts("14");
     }
-    private void GenerteDayNSChart()
+    private async Task GenerteDayNSChart()
     {
-        GenerateNamespaceCharts("5");
+        await GenerateNamespaceCharts("5");
     }
-    private void GenerateNamespaceCharts(string day)
+    private async Task GenerateNamespaceCharts(string day)
     {
         configNSCPU.Data.Datasets.Clear();
         configNSMemory.Data.Datasets.Clear();
 
         foreach (var ns in Namespaces)
         {
-            var metricResult = KubernetesService.GetNamespaceMetricResult(ns, day);
+            var metricResult = await KubernetesService.GetNamespaceMetricResult(ns, day);
 
             var datasetCpu = new LineDataset<double>()
             {
@@ -194,26 +192,29 @@
                 BorderWidth = 1,
                 Fill = FillingMode.Disabled
             };
-            var metrics = metricResult.aggregations.sales_over_time.buckets;
-            configNSCPU.Data.Labels.Clear();
-            configNSMemory.Data.Labels.Clear();
-            foreach (var metric in metrics)
+            if (metricResult.aggregations != null)
             {
-                datasetCpu.Add(metric.avg_cpu.value);
-                datasetMemory.Add(metric.avg_ram.value);
-                configNSCPU.Data.Labels.Add(metric.key_as_string.ToShortDateString());
-                configNSMemory.Data.Labels.Add(metric.key_as_string.ToShortDateString());
+                var metrics = metricResult.aggregations.sales_over_time.buckets;
+                configNSCPU.Data.Labels.Clear();
+                configNSMemory.Data.Labels.Clear();
+                foreach (var metric in metrics)
+                {
+                    datasetCpu.Add(metric.avg_cpu.value);
+                    datasetMemory.Add(metric.avg_ram.value);
+                    configNSCPU.Data.Labels.Add(metric.key_as_string.ToShortDateString());
+                    configNSMemory.Data.Labels.Add(metric.key_as_string.ToShortDateString());
+                }
+                configNSCPU.Data.Datasets.Add(datasetCpu);
+                configNSMemory.Data.Datasets.Add(datasetMemory);
             }
-            configNSCPU.Data.Datasets.Add(datasetCpu);
-            configNSMemory.Data.Datasets.Add(datasetMemory);
         }
     }
 
-    private void GenerateClusterPieCharts()
+    private async Task GenerateClusterPieCharts()
     {
 
-        DrawAvailableClusterCPUMemoryPieChart();
-        DrawAvailableClusterPodsPieChart();
+        await DrawAvailableClusterCPUMemoryPieChart();
+        await DrawAvailableClusterPodsPieChart();
 
     }
     private async Task DrawAvailableClusterCPUMemoryPieChart()
@@ -227,35 +228,38 @@
             clusterMemory += long.Parse(node.Status.Capacity["memory"].ToString().Replace("Ki", ""));
         }
         var clusterMetric = KubernetesService.GetLatestClusterMetric();
-        configClusterCPU.Data.Labels.Clear();
-        configClusterCPU.Data.Labels.Add("Remaining");
-        configClusterCPU.Data.Labels.Add("Used");
-        PieDataset<long> datasetClusterCPU = new PieDataset<long>(new[] { clusterCPU - clusterMetric.CPU, clusterMetric.CPU })
+        if (clusterMetric != null)
         {
-            BackgroundColor = new[]
-        {
+            configClusterCPU.Data.Labels.Clear();
+            configClusterCPU.Data.Labels.Add("Remaining");
+            configClusterCPU.Data.Labels.Add("Used");
+            PieDataset<long> datasetClusterCPU = new PieDataset<long>(new[] { clusterCPU - clusterMetric.CPU, clusterMetric.CPU })
+            {
+                BackgroundColor = new[]
+            {
             ColorUtil.FromDrawingColor(System.Drawing.Color.FromArgb(128, GetNextSystemColor())), // Slice 1 aka "Red"
             ColorUtil.FromDrawingColor(System.Drawing.Color.FromArgb(128, GetNextSystemColor())), // Slice 2 aka "Yellow"
 
         }
-        };
-        configClusterCPU.Data.Datasets.Clear();
-        configClusterCPU.Data.Datasets.Add(datasetClusterCPU);
+            };
+            configClusterCPU.Data.Datasets.Clear();
+            configClusterCPU.Data.Datasets.Add(datasetClusterCPU);
 
-        configClusterMemory.Data.Labels.Clear();
-        configClusterMemory.Data.Labels.Add("Remaining");
-        configClusterMemory.Data.Labels.Add("Used");
-        PieDataset<long> datasetClusterMemory = new PieDataset<long>(new[] { clusterMemory - clusterMetric.Memory, clusterMetric.Memory })
-        {
-            BackgroundColor = new[]
-        {
+            configClusterMemory.Data.Labels.Clear();
+            configClusterMemory.Data.Labels.Add("Remaining");
+            configClusterMemory.Data.Labels.Add("Used");
+            PieDataset<long> datasetClusterMemory = new PieDataset<long>(new[] { clusterMemory - clusterMetric.Memory, clusterMetric.Memory })
+            {
+                BackgroundColor = new[]
+            {
             ColorUtil.FromDrawingColor(System.Drawing.Color.FromArgb(128, GetNextSystemColor())), // Slice 1 aka "Red"
             ColorUtil.FromDrawingColor(System.Drawing.Color.FromArgb(128, GetNextSystemColor())), // Slice 2 aka "Yellow"
 
         }
-        };
-        configClusterMemory.Data.Datasets.Clear();
-        configClusterMemory.Data.Datasets.Add(datasetClusterMemory);
+            };
+            configClusterMemory.Data.Datasets.Clear();
+            configClusterMemory.Data.Datasets.Add(datasetClusterMemory);
+        }
     }
     private async Task DrawAvailableClusterPodsPieChart()
     {
@@ -350,8 +354,6 @@
 
     private async Task LoadPods()
     {
-        //PodList = kubeState.Pods.Where(a => a.Readiness == "false");
-
         var pods = await KubernetesService.GetPods("default");
         PodList = pods.Items.Where(a => a.Status.ContainerStatuses[0].State.Running == null).ToList();
 
@@ -360,7 +362,6 @@
     {
         ToggleOverlay(true);
         var logs = KubernetesService.GetPodLogs(name, ns).Result;
-        //PodList = kubeState.Pods.Where(a => a.Readiness == "false");
         var parameters = new DialogParameters { ["LogText"] = logs };
         DialogOptions dialogOptions = new DialogOptions() { MaxWidth = MaxWidth.Large, FullWidth = true };
         var dialog = DialogService.Show<LogView>("Delete Server", parameters, dialogOptions);
@@ -370,5 +371,9 @@
     {
         isVisible = visible;
         StateHasChanged();
+    }
+    protected override void Dispose(bool disposed)
+    {
+        base.Dispose(disposed);
     }
 }

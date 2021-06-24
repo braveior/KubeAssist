@@ -57,6 +57,7 @@ namespace Braveior.KubeAssist.Services
         public virtual void Dispose()
         {
             _stoppingCts.Cancel();
+
         }
     }
 }

@@ -33,14 +33,14 @@
         <MudItem lg="12">
             <MudText Typo="Typo.h4">Labels</MudText>
         </MudItem>
-        @*<MudItem lg="12">
+        <MudItem lg="12">
                 <div Class="d-flex flex-row py-2 px-1">
-                    @foreach (var label in Service.Labels)
+                    @foreach (var label in Service.Metadata.Labels)
                     {
-                        <MudChip Color="Color.Primary" Variant="Variant.Outlined" Size="MudBlazor.Size.Medium">@label.Name | @label.Value</MudChip>
+                        <MudChip Color="Color.Primary" Variant="Variant.Outlined" Size="MudBlazor.Size.Medium">@label.Key | @label.Value</MudChip>
                     }
                 </div>
-            </MudItem>*@
+            </MudItem>
 
     </MudGrid>
 }
@@ -52,25 +52,16 @@
         public string Name { get; set; }
 
 
-protected override void OnInitialized()
+protected override async Task OnInitializedAsync()
     {
 
-        LoadServiceDetail();
+        await LoadServiceDetail();
         base.OnInitialized();
     }
     private async Task LoadServiceDetail()
     {
-
         Service = await KubernetesService.GetService(Name, "default");
-
         StateHasChanged();
-        //if (KubeStateState.Value.KubeState != null)
-        //{
-        //    Service = KubeStateState.Value.KubeState.Services.Where(a => a.Name.Equals(Name)).FirstOrDefault();
-        //}
     }
     private V1Service Service { get; set; } = new V1Service();
-
-
-
     }

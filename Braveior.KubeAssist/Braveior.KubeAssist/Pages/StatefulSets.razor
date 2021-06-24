@@ -31,10 +31,13 @@
 
 @code
 {
-    protected override void OnInitialized()
+    private bool isVisible;
+    protected override async Task OnInitializedAsync()
     {
-        LoadStatefulSets();
-        base.OnInitialized();
+        ToggleOverlay(true);
+        await LoadStatefulSets();
+        ToggleOverlay(false);
+        await base.OnInitializedAsync();
     }
 
     private async Task LoadStatefulSets()
@@ -45,16 +48,16 @@
             StatefulSetList = statefulsets.Items.ToList();
         }
         StateHasChanged();
-        //if (KubeStateState.Value.KubeState != null)
-        //{
-
-        //    StatefulSetList = KubeStateState.Value.KubeState.StatefulSets;
-        //}
     }
     private static List<V1StatefulSet> StatefulSetList { get; set; }
 
     private void NavigateStatefulSetDetails(string name)
     {
         NavigationManager.NavigateTo($"/statefulsetdetail/{name}");
+    }
+    private void ToggleOverlay(bool visible)
+    {
+        isVisible = visible;
+        StateHasChanged();
     }
 }

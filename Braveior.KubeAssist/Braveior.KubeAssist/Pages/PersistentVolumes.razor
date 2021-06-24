@@ -23,11 +23,13 @@
 @code
 {
 
-
-    protected override void OnInitialized()
+    private bool isVisible;
+    protected override async Task OnInitializedAsync()
     {
-        LoadPersistenceVolumes();
-        base.OnInitialized();
+        ToggleOverlay(true);
+        await LoadPersistenceVolumes();
+        ToggleOverlay(false);
+        await base.OnInitializedAsync();
     }
 
     private async Task LoadPersistenceVolumes()
@@ -38,12 +40,12 @@
             PVList = pvs.Items.ToList();
         }
         StateHasChanged();
-        //if (KubeStateState.Value.KubeState != null)
-        //{
-        //    PVList = KubeStateState.Value.KubeState.PersistentVolumes;
-        //}
     }
     private static List<V1PersistentVolume> PVList { get; set; }
 
-
+    private void ToggleOverlay(bool visible)
+    {
+        isVisible = visible;
+        StateHasChanged();
+    }
 }

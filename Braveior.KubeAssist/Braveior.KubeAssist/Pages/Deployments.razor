@@ -30,9 +30,13 @@
 
     private static List<V1Deployment> DeploymentList { get; set; } = new List<V1Deployment>();
 
-    protected override void OnInitialized()
+    private bool isVisible;
+
+    protected override async Task OnInitializedAsync()
     {
-        LoadDeployments();
+        ToggleOverlay(true);
+        await LoadDeployments();
+        ToggleOverlay(false);
         base.OnInitialized();
     }
 
@@ -46,15 +50,15 @@
         }
         StateHasChanged();
 
-        //if (KubeStateState.Value.KubeState != null)
-        //{
-
-        //    DeploymentList = KubeStateState.Value.KubeState.Deployments;
-        //}
     }
 
     private void NavigateDeploymentDetails(string name)
     {
         NavigationManager.NavigateTo($"/deploymentdetail/{name}");
+    }
+    private void ToggleOverlay(bool visible)
+    {
+        isVisible = visible;
+        StateHasChanged();
     }
 }

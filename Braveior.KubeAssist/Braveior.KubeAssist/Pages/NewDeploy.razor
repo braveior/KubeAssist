@@ -54,6 +54,11 @@
             SetValidationMessage(ex.Message);
 
         }
+        catch (Exception ex)
+        {
+            SetValidationMessage(ex.Message);
+
+        }
     }
     private void SetValidationMessage(string error)
     {
