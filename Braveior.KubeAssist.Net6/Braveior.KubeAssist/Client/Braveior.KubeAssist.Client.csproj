@@ -1,0 +1,46 @@
+<Project Sdk="Microsoft.NET.Sdk.BlazorWebAssembly">
+
+  <PropertyGroup>
+    <TargetFramework>net6.0</TargetFramework>
+    <ServiceWorkerAssetsManifest>service-worker-assets.js</ServiceWorkerAssetsManifest>
+    <RunAnalyzersDuringBuild>false</RunAnalyzersDuringBuild>
+    <EnableNETAnalyzers>false</EnableNETAnalyzers>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="BlazorMonacoYaml" Version="1.5.0" />
+    <PackageReference Include="ChartJs.Blazor.Fork" Version="2.0.2" />
+    <PackageReference Include="Fluxor" Version="4.1.0" />
+    <PackageReference Include="Fluxor.Blazor.Web" Version="4.1.0" />
+    <PackageReference Include="Google.Protobuf" Version="3.17.3" />
+    <PackageReference Include="Grpc.Net.Client" Version="2.38.0" />
+    <PackageReference Include="Grpc.Net.Client.Web" Version="2.38.0" />
+    <PackageReference Include="Grpc.Tools" Version="2.38.1">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="KubernetesClient" Version="5.0.12" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="6.0.0-preview.5.21301.17" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="6.0.0-preview.5.21301.17" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.Extensions.Http" Version="5.0.0" />
+    <PackageReference Include="MudBlazor" Version="5.0.14" />
+    <PackageReference Include="NEST" Version="7.13.1" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
+    <PackageReference Include="YamlDotNet" Version="11.2.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Shared\Braveior.KubeAssist.Shared.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ServiceWorker Include="wwwroot\service-worker.js" PublishedContent="wwwroot\service-worker.published.js" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Update="wwwroot\appsettings.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+</Project>

@@ -13,7 +13,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="BlazorMonacoYaml" Version="1.5.0" />
     <PackageReference Include="ChartJs.Blazor.Fork" Version="2.0.2" />
     <PackageReference Include="Fluxor" Version="4.1.0" />
     <PackageReference Include="Fluxor.Blazor.Web" Version="4.1.0" />
@@ -27,6 +26,10 @@
 
   <ItemGroup>
     <Folder Include="wwwroot\images\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\BlazorMonacoYaml\BlazorMonacoYaml.csproj" />
   </ItemGroup>
 
 </Project>

@@ -21,6 +21,9 @@ namespace Braveior.KubeAssist
                 .ConfigureWebHostDefaults(webBuilder =>
                 {
                     webBuilder.UseStartup<Startup>();
+                }).ConfigureAppConfiguration(c =>
+                {
+                    c.AddJsonFile("config/appsettings.json", optional: true, reloadOnChange: true);
                 });
     }
 }

@@ -1,0 +1,67 @@
+﻿@page "/servicedetail/{name}"
+
+@using Braveior.KubeAssist.Services
+@using Braveior.KubeAssist.Services.Models
+@inject IKubernetesService KubernetesService
+@inject IDialogService DialogService
+
+
+<MudText Typo="Typo.h4">Service Details</MudText>
+@if (Service.Metadata != null)
+{
+    <MudGrid>
+        <MudItem lg="4">
+            <MudTextField @bind-Value="Service.Metadata.Name" Label="Name" Variant="Variant.Text" Margin="Margin.Dense" />
+        </MudItem>
+        <MudItem lg="4">
+            <MudTextField @bind-Value="Service.Metadata.NamespaceProperty" Label="Namespace" Variant="Variant.Text" Margin="Margin.Dense" />
+        </MudItem>
+        <MudItem lg="4">
+            <MudTextField @bind-Value="Service.Spec.Type" Label="Service Type" Variant="Variant.Text" Margin="Margin.Dense" />
+        </MudItem>
+
+        <MudItem lg="4">
+            <MudTextField @bind-Value="Service.Spec.ClusterIP" Label="Cluster IP" Variant="Variant.Text" Margin="Margin.Dense" />
+        </MudItem>
+        <MudItem lg="4">
+            <MudTextField @bind-Value="Service.Metadata.CreationTimestamp" Label="Created Date" Variant="Variant.Text" Margin="Margin.Dense" />
+        </MudItem>
+        <MudItem lg="4">
+            <MudTextField @bind-Value="Service.Spec.LoadBalancerIP" Label="Load Balancer IP" Variant="Variant.Text" Margin="Margin.Dense" />
+        </MudItem>
+
+        <MudItem lg="12">
+            <MudText Typo="Typo.h4">Labels</MudText>
+        </MudItem>
+        <MudItem lg="12">
+                <div Class="d-flex flex-row py-2 px-1">
+                    @foreach (var label in Service.Metadata.Labels)
+                    {
+                        <MudChip Color="Color.Primary" Variant="Variant.Outlined" Size="MudBlazor.Size.Medium">@label.Key | @label.Value</MudChip>
+                    }
+                </div>
+            </MudItem>
+
+    </MudGrid>
+}
+
+
+    @code
+{
+        [Parameter]
+        public string Name { get; set; }
+
+
+protected override async Task OnInitializedAsync()
+    {
+
+        await LoadServiceDetail();
+        base.OnInitialized();
+    }
+    private async Task LoadServiceDetail()
+    {
+        Service = await KubernetesService.GetService(Name, "default");
+        StateHasChanged();
+    }
+    private V1Service Service { get; set; } = new V1Service();
+    }

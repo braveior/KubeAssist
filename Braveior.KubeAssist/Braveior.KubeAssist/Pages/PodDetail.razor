@@ -77,62 +77,67 @@
         </div>
     </MudItem>
 
-    @*@foreach (var container in Pod.Containers)
+    @foreach (var container in Pod.Spec.Containers)
     {
         <MudItem lg="12">
             <MudText Typo="Typo.h4">Container - @container.Name</MudText>
         </MudItem>
-        <MudItem lg="4">
+        <MudItem lg="6">
             <MudTextField @bind-Value="container.Name" Label="Name" Variant="Variant.Text" Margin="Margin.Dense" />
         </MudItem>
-        <MudItem lg="4">
-            <MudTextField @bind-Value="container.ContainerId" Label="Id" Variant="Variant.Text" Margin="Margin.Dense" />
-        </MudItem>
-        <MudItem lg="4">
-            <MudTextField @bind-Value="container.Readiness" Label="Readiness" Variant="Variant.Text" Margin="Margin.Dense" />
-        </MudItem>
-        <MudItem lg="4">
+        @*<MudItem lg="3">
+                <MudTextField @bind-Value="container.ContainerId" Label="Id" Variant="Variant.Text" Margin="Margin.Dense" />
+            </MudItem>*@
+        @*<MudItem lg="4">
+                <MudTextField @bind-Value="container.Readiness" Label="Readiness" Variant="Variant.Text" Margin="Margin.Dense" />
+            </MudItem>*@
+        <MudItem lg="6">
             <MudTextField @bind-Value="container.Image" Label="Image" Variant="Variant.Text" Margin="Margin.Dense" />
         </MudItem>
-        <MudItem lg="4">
-            <MudTextField @bind-Value="container.ImageId" Label="Image Id" Variant="Variant.Text" Margin="Margin.Dense" />
+        @*<MudItem lg="4">
+                <MudTextField @bind-Value="container.ImageId" Label="Image Id" Variant="Variant.Text" Margin="Margin.Dense" />
+            </MudItem>*@
+        @*<MudItem lg="4">
+                <MudTextField @bind-Value="Pod.Status.ContainerStatuses.Where(c=>c.Name==container.Name).FirstOrDefault()." Label="Status" Variant="Variant.Text" Margin="Margin.Dense" />
+            </MudItem>*@
+
+        <MudItem lg="12">
+            <MudText Typo="Typo.h4">Resource Requests and Limits</MudText>
         </MudItem>
-        <MudItem lg="4">
-            <MudTextField @bind-Value="container.Status" Label="Status" Variant="Variant.Text" Margin="Margin.Dense" />
-        </MudItem>
-
-    <MudItem lg="12">
-        <MudText Typo="Typo.h4">Resource Requests and Limits</MudText>
-    </MudItem>
-
-    <MudItem lg="3">
-        <MudPaper Class="mt-16" Elevation="1">
-            <MudText Align="Align.Center" Typo="Typo.h6">CPU Request</MudText>
-            <MudText Align="Align.Center" Typo="Typo.h4">@container.CPUResourceRequests m</MudText>
-        </MudPaper>
-    </MudItem>
-    <MudItem lg="3">
-        <MudPaper Class="mt-16" Elevation="1">
-            <MudText Align="Align.Center" Typo="Typo.h6">Memory Request</MudText>
-            <MudText Align="Align.Center" Typo="Typo.h4">@container.MemoryResourceRequests Kib</MudText>
-        </MudPaper>
-    </MudItem>
-    <MudItem lg="3">
-        <MudPaper Class="mt-16" Elevation="1">
-            <MudText Align="Align.Center" Typo="Typo.h6">CPU Limit</MudText>
-            <MudText Align="Align.Center" Typo="Typo.h4">@container.CPUResourceLimits m</MudText>
-        </MudPaper>
-    </MudItem>
-    <MudItem lg="3">
-        <MudPaper Class="mt-16" Elevation="1">
-            <MudText Align="Align.Center" Typo="Typo.h6">Memory Limit</MudText>
-            <MudText Align="Align.Center" Typo="Typo.h4">@container.MemoryResourceLimits Kib</MudText>
-        </MudPaper>
-    </MudItem>
-   }*@
+        @if (container.Resources.Requests != null)
+        {
+            <MudItem lg="3">
+                <MudPaper Class="mt-16" Elevation="1">
+                    <MudText Align="Align.Center" Typo="Typo.h6">CPU Request</MudText>
+                    <MudText Align="Align.Center" Typo="Typo.h4">@container.Resources.Requests["cpu"]</MudText>
+                </MudPaper>
+            </MudItem>
+            <MudItem lg="3">
+                <MudPaper Class="mt-16" Elevation="1">
+                    <MudText Align="Align.Center" Typo="Typo.h6">Memory Request</MudText>
+                    <MudText Align="Align.Center" Typo="Typo.h4">@container.Resources.Requests["memory"]</MudText>
+                </MudPaper>
+            </MudItem>
+        }
+        @if (container.Resources.Limits != null)
+        {
+            <MudItem lg="3">
+                <MudPaper Class="mt-16" Elevation="1">
+                    <MudText Align="Align.Center" Typo="Typo.h6">CPU Limit</MudText>
+                    <MudText Align="Align.Center" Typo="Typo.h4">@container.Resources.Limits["cpu"]</MudText>
+                </MudPaper>
+            </MudItem>
+            <MudItem lg="3">
+                <MudPaper Class="mt-16" Elevation="1">
+                    <MudText Align="Align.Center" Typo="Typo.h6">Memory Limit</MudText>
+                    <MudText Align="Align.Center" Typo="Typo.h4">@container.Resources.Limits["memory"]</MudText>
+                </MudPaper>
+            </MudItem>
+        }
+      }
 
 
-</MudGrid>
+    </MudGrid>
 
 }
 
@@ -214,7 +219,7 @@
             BorderWidth = 1,
             Fill = FillingMode.Disabled
         };
-        if (metricResult.aggregations != null)
+        if (metricResult!=null && metricResult.aggregations != null)
         {
             var metrics = metricResult.aggregations.sales_over_time.buckets;
             configContainerCPU.Data.Labels.Clear();

@@ -1,0 +1,63 @@
+﻿@page "/services"
+
+@using Braveior.KubeAssist.Services
+@using Braveior.KubeAssist.Services.Models
+@inject IKubernetesService KubernetesService
+@inject NavigationManager NavigationManager
+
+<MudTable Dense="true" Items="@ServiceList" Hover="true" Breakpoint="Breakpoint.Sm">
+    <HeaderContent>
+        <MudTh></MudTh>
+        <MudTh>Name</MudTh>
+        <MudTh>Namespace</MudTh>
+        <MudTh>ClusterIP</MudTh>
+        <MudTh>External Name</MudTh>
+        <MudTh>Load Balancer IP</MudTh>
+        <MudTh>Created Date</MudTh>
+        <MudTh>Service Type</MudTh>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd><MudButton Variant="Variant.Outlined" Size="MudBlazor.Size.Small" OnClick="@(() => NavigateServiceDetails(context.Metadata.Name))">Service Details</MudButton></MudTd>
+        <MudTd DataLabel="Name">@context.Metadata.Name</MudTd>
+        <MudTd DataLabel="Namespace">@context.Metadata.NamespaceProperty</MudTd>
+        <MudTd DataLabel="ClusterIP">@context.Spec.ClusterIP</MudTd>
+        <MudTd DataLabel="ExternalName">@context.Spec.ExternalName</MudTd>
+        <MudTd DataLabel="LoadBalancerIP">@context.Spec.LoadBalancerIP</MudTd>
+        <MudTd DataLabel="CreatedDate">@context.Metadata.CreationTimestamp</MudTd>
+        <MudTd DataLabel="ServiceType">@context.Spec.Type</MudTd>
+    </RowTemplate>
+</MudTable>
+
+
+@code
+{
+    private bool isVisible;
+    protected override async Task OnInitializedAsync()
+    {
+        ToggleOverlay(true);
+        await LoadServices();
+        ToggleOverlay(false);
+        await base.OnInitializedAsync();
+    }
+
+    private async Task LoadServices()
+    {
+        var services = await KubernetesService.GetServices("default");
+        if (services.Items != null)
+        {
+            ServiceList = services.Items.ToList();
+        }
+        StateHasChanged();
+    }
+    private static List<V1Service> ServiceList { get; set; } = new List<V1Service>();
+
+    private void NavigateServiceDetails(string name)
+    {
+        NavigationManager.NavigateTo($"/servicedetail/{name}");
+    }
+    private void ToggleOverlay(bool visible)
+    {
+        isVisible = visible;
+        StateHasChanged();
+    }
+}

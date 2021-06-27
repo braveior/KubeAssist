@@ -1,0 +1,379 @@
+﻿@page "/"
+@page "/dashboard"
+@namespace Braveior.KubeAssist.Pages
+@using System.Text;
+@using ChartJs.Blazor.PieChart
+@using System.Drawing
+
+
+@inject IKubernetesService KubernetesService
+@inherits Fluxor.Blazor.Web.Components.FluxorComponent
+@inject IDialogService DialogService
+
+
+<MudGrid>
+    <MudItem lg="8">
+        <MudButtonGroup Color="MudBlazor.Color.Primary" Variant="Variant.Outlined">
+            <MudButton @onclick="GenerteMonthNSChart">Month</MudButton>
+            <MudButton @onclick="GenerteWeekNSChart">Week</MudButton>
+            <MudButton @onclick="GenerteDayNSChart">Day</MudButton>
+
+        </MudButtonGroup>
+    </MudItem>
+    <MudItem lg="4">
+        <MudButton @onclick="@((e) => LoadDashboard(true))">Refresh</MudButton>
+    </MudItem>
+    <MudItem lg="6">
+        <MudPaper Class="mt-16" Elevation="3">
+            <Chart Config="configNSCPU"></Chart>
+        </MudPaper>
+    </MudItem>
+    <MudItem lg="6">
+        <MudPaper Class="mt-16" Elevation="3">
+            <Chart Config="configNSMemory"></Chart>
+        </MudPaper>
+    </MudItem>
+    <MudItem lg="4">
+
+        <MudPaper Class="mt-16" Elevation="3">
+            <Chart Config="configClusterCPU"></Chart>
+        </MudPaper>
+    </MudItem>
+    <MudItem lg="4">
+            <MudPaper Class="mt-16" Elevation="3">
+                <Chart Config="configClusterMemory"></Chart>
+            </MudPaper>
+        </MudItem>
+        <MudItem lg="4">
+            <MudPaper Class="mt-16" Elevation="3">
+                <Chart Config="configClusterPods"></Chart>
+            </MudPaper>
+        </MudItem>
+    <MudItem lg="12">
+        <MudTable Dense="true" Items="@PodList" Hover="true" Breakpoint="Breakpoint.Sm">
+            <HeaderContent>
+                <MudTh>Name</MudTh>
+                <MudTh>UID</MudTh>
+                <MudTh>StartTime</MudTh>
+                <MudTh>CreatedTime</MudTh>
+                <MudTh>Status</MudTh>
+                <MudTh>Readiness</MudTh>
+                <MudTh>Logs</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="Name">@context.Metadata.Name</MudTd>
+                <MudTd DataLabel="UID">@context.Metadata.Uid</MudTd>
+                <MudTd DataLabel="CreatedTime">@context.Metadata.CreationTimestamp</MudTd>
+                @if (context.Status.ContainerStatuses[0].State.Running != null)
+                {
+                <MudTd DataLabel="Status">Running</MudTd>
+                }
+                @if (context.Status.ContainerStatuses[0].State.Terminated != null)
+                {
+                <MudTd DataLabel="Status">Terminated</MudTd>
+                }
+                @if (context.Status.ContainerStatuses[0].State.Waiting != null)
+                {
+                <MudTd DataLabel="Status">Waiting</MudTd>
+                }
+                <MudTd><MudButton Variant="Variant.Outlined" Size="MudBlazor.Size.Small" OnClick="@(() => ViewLogs(context.Metadata.Name,context.Metadata.Namespace()))">Logs</MudButton></MudTd>
+            </RowTemplate>
+        </MudTable>
+    </MudItem>
+</MudGrid>
+<MudOverlay @bind-visible="isVisible" DarkBackground="true">
+    <MudProgressCircular Color="MudBlazor.Color.Secondary" Indeterminate="true" />
+</MudOverlay>
+
+
+@code
+{
+
+
+
+
+
+    private LineConfig configNSCPU;
+
+    private LineConfig configNSMemory;
+
+    private PieConfig configClusterCPU;
+
+    private PieConfig configClusterMemory;
+
+    private PieConfig configClusterPods;
+
+    private bool isVisible;
+
+    [Inject]
+    private IDispatcher Dispatcher { get; set; }
+
+    Queue<System.Drawing.Color> SysColors { get; set; } = new Queue<System.Drawing.Color>();
+
+    List<string> Namespaces = new List<string>() { "default" };
+    List<NamespaceMetric> NamespaceMetrics = new List<NamespaceMetric>();
+
+    private static List<V1Pod> PodList { get; set; } = new List<V1Pod>();
+
+
+    private void BuildSysColorsQueue()
+    {
+        SysColors.Enqueue(System.Drawing.Color.Red);
+        SysColors.Enqueue(System.Drawing.Color.Blue);
+        SysColors.Enqueue(System.Drawing.Color.Green);
+        SysColors.Enqueue(System.Drawing.Color.Orange);
+        SysColors.Enqueue(System.Drawing.Color.Violet);
+        SysColors.Enqueue(System.Drawing.Color.Black);
+        SysColors.Enqueue(System.Drawing.Color.Aqua);
+        SysColors.Enqueue(System.Drawing.Color.Chocolate);
+        SysColors.Enqueue(System.Drawing.Color.Turquoise);
+    }
+    protected override async Task OnInitializedAsync()
+    {
+        ToggleOverlay(true);
+        BuildSysColorsQueue();
+        configNSCPU = GetLineChartConfig("Namespace CPU Trend");
+        configNSMemory = GetLineChartConfig("Namespace Memory Trend");
+        configClusterCPU = GetPieChartConfig("Cluster CPU");
+        configClusterMemory = GetPieChartConfig("Cluster Memory");
+        configClusterPods = GetPieChartConfig("Cluster Pods");
+        await LoadDashboard(false);
+        ToggleOverlay(false);
+        await base.OnInitializedAsync();
+
+    }
+    private async Task LoadDashboard(bool hardReload)
+    {
+        await GenerateNamespaceCharts("7");
+        await GenerateClusterPieCharts();
+        await LoadPods();
+    }
+    private System.Drawing.Color GetNextSystemColor()
+    {
+        var color = SysColors.Dequeue();
+        SysColors.Enqueue(color);
+        return color;
+    }
+    private async Task GenerteMonthNSChart()
+    {
+        await GenerateNamespaceCharts("30");
+    }
+    private async Task GenerteWeekNSChart()
+    {
+        await GenerateNamespaceCharts("14");
+    }
+    private async Task GenerteDayNSChart()
+    {
+        await GenerateNamespaceCharts("5");
+    }
+    private async Task GenerateNamespaceCharts(string day)
+    {
+        configNSCPU.Data.Datasets.Clear();
+        configNSMemory.Data.Datasets.Clear();
+
+        foreach (var ns in Namespaces)
+        {
+            var metricResult = await KubernetesService.GetNamespaceMetricResult(ns, day);
+
+            var datasetCpu = new LineDataset<double>()
+            {
+                Label = ns,
+                BackgroundColor = ColorUtil.FromDrawingColor(System.Drawing.Color.FromArgb(128, GetNextSystemColor())),
+                BorderColor = ColorUtil.FromDrawingColor(GetNextSystemColor()),
+                BorderWidth = 1,
+                Fill = FillingMode.Disabled
+            };
+            var datasetMemory = new LineDataset<double>
+                ()
+            {
+                Label = ns,
+                BackgroundColor = ColorUtil.FromDrawingColor(System.Drawing.Color.FromArgb(128, GetNextSystemColor())),
+                BorderColor = ColorUtil.FromDrawingColor(GetNextSystemColor()),
+                BorderWidth = 1,
+                Fill = FillingMode.Disabled
+            };
+            if (metricResult!=null && metricResult.aggregations != null)
+            {
+                var metrics = metricResult.aggregations.sales_over_time.buckets;
+                configNSCPU.Data.Labels.Clear();
+                configNSMemory.Data.Labels.Clear();
+                foreach (var metric in metrics)
+                {
+                    datasetCpu.Add(metric.avg_cpu.value);
+                    datasetMemory.Add(metric.avg_ram.value);
+                    configNSCPU.Data.Labels.Add(metric.key_as_string.ToShortDateString());
+                    configNSMemory.Data.Labels.Add(metric.key_as_string.ToShortDateString());
+                }
+                configNSCPU.Data.Datasets.Add(datasetCpu);
+                configNSMemory.Data.Datasets.Add(datasetMemory);
+            }
+        }
+    }
+
+    private async Task GenerateClusterPieCharts()
+    {
+
+        await DrawAvailableClusterCPUMemoryPieChart();
+        await DrawAvailableClusterPodsPieChart();
+
+    }
+    private async Task DrawAvailableClusterCPUMemoryPieChart()
+    {
+        long clusterCPU = 0;
+        long clusterMemory = 0;
+        var nodes = await KubernetesService.GetNodes();
+        foreach (var node in nodes.Items)
+        {
+            clusterCPU += node.Status.Capacity["cpu"].ToInt64() * 1000;
+            clusterMemory += long.Parse(node.Status.Capacity["memory"].ToString().Replace("Ki", ""));
+        }
+        var clusterMetric = await KubernetesService.GetLatestClusterMetric();
+        if (clusterMetric != null)
+        {
+            configClusterCPU.Data.Labels.Clear();
+            configClusterCPU.Data.Labels.Add("Remaining");
+            configClusterCPU.Data.Labels.Add("Used");
+            PieDataset<long> datasetClusterCPU = new PieDataset<long>(new[] { clusterCPU - clusterMetric.CPU, clusterMetric.CPU })
+            {
+                BackgroundColor = new[]
+            {
+            ColorUtil.FromDrawingColor(System.Drawing.Color.FromArgb(128, GetNextSystemColor())), // Slice 1 aka "Red"
+            ColorUtil.FromDrawingColor(System.Drawing.Color.FromArgb(128, GetNextSystemColor())), // Slice 2 aka "Yellow"
+
+        }
+            };
+            configClusterCPU.Data.Datasets.Clear();
+            configClusterCPU.Data.Datasets.Add(datasetClusterCPU);
+
+            configClusterMemory.Data.Labels.Clear();
+            configClusterMemory.Data.Labels.Add("Remaining");
+            configClusterMemory.Data.Labels.Add("Used");
+            PieDataset<long> datasetClusterMemory = new PieDataset<long>(new[] { clusterMemory - clusterMetric.Memory, clusterMetric.Memory })
+            {
+                BackgroundColor = new[]
+            {
+            ColorUtil.FromDrawingColor(System.Drawing.Color.FromArgb(128, GetNextSystemColor())), // Slice 1 aka "Red"
+            ColorUtil.FromDrawingColor(System.Drawing.Color.FromArgb(128, GetNextSystemColor())), // Slice 2 aka "Yellow"
+
+        }
+            };
+            configClusterMemory.Data.Datasets.Clear();
+            configClusterMemory.Data.Datasets.Add(datasetClusterMemory);
+        }
+    }
+    private async Task DrawAvailableClusterPodsPieChart()
+    {
+        configClusterPods.Data.Labels.Clear();
+        configClusterPods.Data.Labels.Add("Remaining");
+        configClusterPods.Data.Labels.Add("Used");
+
+        int totalAvailablePods = 0;
+        var nodes = await KubernetesService.GetNodes();
+        var pods = await KubernetesService.GetPods("default");
+        foreach (var node in nodes.Items)
+        {
+            totalAvailablePods += node.Status.Capacity["pods"].ToInt32();
+        }
+        int runningPods = pods.Items.Count();
+
+        PieDataset<int> datasetClusterPods = new PieDataset<int>(new[] { totalAvailablePods - runningPods, runningPods })
+        {
+            BackgroundColor = new[]
+{
+            ColorUtil.FromDrawingColor(System.Drawing.Color.FromArgb(128, GetNextSystemColor())), // Slice 1 aka "Red"
+            ColorUtil.FromDrawingColor(System.Drawing.Color.FromArgb(128, GetNextSystemColor())), // Slice 2 aka "Yellow"
+
+        }
+        };
+        configClusterPods.Data.Datasets.Clear();
+        configClusterPods.Data.Datasets.Add(datasetClusterPods);
+    }
+
+    private LineConfig GetLineChartConfig(string header)
+    {
+
+        var config = new LineConfig()
+        {
+            Options = new LineOptions
+            {
+                Responsive = true,
+                Legend = new Legend
+                {
+                    Position = ChartJs.Blazor.Common.Enums.Position.Top
+
+                },
+                Title = new OptionsTitle
+                {
+                    Display = true,
+                    Text = header
+                },
+                Scales = new Scales
+                {
+                    XAxes = new List<CartesianAxis>
+{
+                    new CategoryAxis
+                    {
+                    ScaleLabel = new ScaleLabel
+                    {
+                    LabelString = "Day"
+                    }
+                    }
+                    },
+                    YAxes = new List<CartesianAxis>
+{
+                        new LinearCartesianAxis
+                        {
+                        ScaleLabel = new ScaleLabel
+                        {
+                        LabelString = "Value"
+                        }
+                        }
+                        }
+                }
+            }
+        };
+        return config;
+    }
+
+    private PieConfig GetPieChartConfig(string header)
+    {
+        var config = new PieConfig
+        {
+            Options = new PieOptions
+            {
+                Responsive = true,
+                Title = new OptionsTitle
+                {
+                    Display = true,
+                    Text = header
+                }
+            }
+        };
+        return config;
+    }
+
+    private async Task LoadPods()
+    {
+        var pods = await KubernetesService.GetPods("default");
+        PodList = pods.Items.Where(a => a.Status.ContainerStatuses[0].State.Running == null).ToList();
+
+    }
+    private void ViewLogs(string name, string ns)
+    {
+        ToggleOverlay(true);
+        var logs = KubernetesService.GetPodLogs(name, ns).Result;
+        var parameters = new DialogParameters { ["LogText"] = logs };
+        DialogOptions dialogOptions = new DialogOptions() { MaxWidth = MaxWidth.Large, FullWidth = true };
+        var dialog = DialogService.Show<LogView>("Delete Server", parameters, dialogOptions);
+        ToggleOverlay(false);
+    }
+    private void ToggleOverlay(bool visible)
+    {
+        isVisible = visible;
+        StateHasChanged();
+    }
+    protected override void Dispose(bool disposed)
+    {
+        base.Dispose(disposed);
+    }
+}

@@ -192,7 +192,7 @@
                 BorderWidth = 1,
                 Fill = FillingMode.Disabled
             };
-            if (metricResult.aggregations != null)
+            if (metricResult!=null && metricResult.aggregations != null)
             {
                 var metrics = metricResult.aggregations.sales_over_time.buckets;
                 configNSCPU.Data.Labels.Clear();

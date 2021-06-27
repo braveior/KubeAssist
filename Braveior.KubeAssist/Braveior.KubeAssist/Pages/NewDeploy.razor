@@ -32,13 +32,13 @@
         try
         {
             SetValidationMessage(string.Empty);
-            //var deserializer = new DeserializerBuilder()
-            //.WithNodeDeserializer(inner => new ValidatingNodeDeserializer(inner), s => s.InsteadOf<ObjectNodeDeserializer>())
-            // .Build();
+            var deserializer = new DeserializerBuilder()
+            .WithNodeDeserializer(inner => new ValidatingNodeDeserializer(inner), s => s.InsteadOf<ObjectNodeDeserializer>())
+             .Build();
 
 
             //var test = deserializer.Deserialize<V1PersistentVolume>(await _yamlEditor.GetValue());
-            var deserializer = new DeserializerBuilder().Build();
+           // var deserializer = new DeserializerBuilder().Build();
             var yamlObject = deserializer.Deserialize(new StringReader(await _yamlEditor.GetValue()));
 
             var serializer = new SerializerBuilder()
