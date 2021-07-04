@@ -1,0 +1,127 @@
+﻿@page "/nodedetail/{Name}"
+@using System.Text;
+@using ChartJs.Blazor.PieChart
+@using Braveior.KubeAssist.Services
+@using Braveior.KubeAssist.Services.Models
+@inject IKubernetesService KubernetesService
+@inject IDialogService DialogService
+
+
+<MudText Typo="Typo.h6">Node Details</MudText>
+@if (Node.Metadata != null)
+{
+<MudGrid>
+    <MudItem lg="4">
+        <MudTextField @bind-Value="Node.Metadata.Name" Label="Name" Variant="Variant.Text" Margin="Margin.Dense" />
+    </MudItem>
+    <MudItem lg="4">
+        <MudTextField @bind-Value="Node.Metadata.ClusterName" Label="Cluster" Variant="Variant.Text" Margin="Margin.Dense" />
+    </MudItem>
+    <MudItem lg="4">
+        <MudTextField @bind-Value="Node.Metadata.CreationTimestamp" Label="Created Time" Variant="Variant.Text" Margin="Margin.Dense" />
+    </MudItem>
+        <MudItem lg="12">
+            <MudText Typo="Typo.h6">Conditions</MudText>
+        </MudItem>
+        <MudItem lg="12">
+            <MudTable Dense="true" Items="@NodeConditions" Hover="true" Breakpoint="Breakpoint.Sm">
+                <HeaderContent>
+                    <MudTh>Type</MudTh>
+                    <MudTh>Status</MudTh>
+                    <MudTh>Reason</MudTh>
+                    <MudTh>Message</MudTh>
+                    <MudTh>Last Transition Time</MudTh>
+                    <MudTh>Last Heartbeat Time</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="Type">@context.Type</MudTd>
+                    <MudTd DataLabel="Status">
+                        @if (context.Type == "MemoryPressure")
+                            {
+                                if (context.Status == "False")
+                                {
+                                <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Color="Color.Success" />
+                                }
+                                else
+                                {
+                                <MudIcon Icon="@Icons.Material.Filled.Error" Color="Color.Error" />
+                                }
+                            }
+                            else if (context.Type == "DiskPressure")
+                            {
+                                if (context.Status == "False")
+                                {
+                                <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Color="Color.Success" />
+                                }
+                                else
+                                {
+                                <MudIcon Icon="@Icons.Material.Filled.Error" Color="Color.Error" />
+                                }
+                            }
+                            else if (context.Type == "PIDPressure")
+                            {
+                                if (context.Status == "False")
+                                {
+                                <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Color="Color.Success" />
+                                }
+                                else
+                                {
+                                <MudIcon Icon="@Icons.Material.Filled.Error" Color="Color.Error" />
+                                }
+                            }
+                            else if (context.Type == "Ready")
+                            {
+                                if (context.Status == "True")
+                                {
+                                <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Color="Color.Success" />
+                                }
+                                else
+                                {
+                                <MudIcon Icon="@Icons.Material.Filled.Error" Color="Color.Error" />
+                                }
+                            }
+
+                    </MudTd>
+                    <MudTd DataLabel="Reason">@context.Reason</MudTd>
+                    <MudTd DataLabel="Message">@context.Message</MudTd>
+                    <MudTd DataLabel="LastTransitionTime">@context.LastTransitionTime</MudTd>
+                    <MudTd DataLabel="LastProbeTime">@context.LastHeartbeatTime</MudTd>
+                </RowTemplate>
+
+            </MudTable>
+        </MudItem>
+
+
+    
+
+
+</MudGrid>
+
+}
+
+@code
+{
+    [Parameter]
+    public string Name { get; set; }
+
+    private V1Node Node { get; set; } = new V1Node();
+
+    private List<V1NodeCondition> NodeConditions { get; set; } = new List<V1NodeCondition>();
+
+    protected override async Task OnInitializedAsync()
+    {
+
+        await LoadNode();
+
+        await base.OnInitializedAsync();
+    }
+    private async Task LoadNode()
+    {
+        Node = await KubernetesService.GetNode(Name);
+        NodeConditions = Node.Status.Conditions.ToList();
+        StateHasChanged();
+
+    }
+
+
+}

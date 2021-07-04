@@ -4,19 +4,21 @@
 <MudDialogProvider />
 <MudSnackbarProvider />
 <MudLayout>
-    <MudAppBar Color="Color.Dark" Elevation="1">
-        <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@ToggleDrawer" />
+    <MudAppBar Style="@($"color:{currentTheme.Palette.AppbarText}; background:{currentTheme.Palette.Background};")" Elevation="1">
+        <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Surface" Edge="Edge.Start" OnClick="@ToggleDrawer" />
         <img align="left" src="images/kubeassist_logo_t.png" />
         <MudAppBarSpacer />
-        <MudSelect T="string" Label="Select Namespace" Variant="Variant.Filled" ValueChanged="OnSelectedValue">
+
+        <MudSelect T="string" @bind-Value="SelectedNamespace"  Label="Select Namespace" Variant="Variant.Text">
             @if (Namespaces.Items != null)
             {
                 @foreach (var item in Namespaces.Items)
                 {
-                    <MudSelectItem Value="@item.Metadata.Name"><span style="color:white;background-color:dimgrey">@item.Metadata.Name</span></MudSelectItem>
+                    <MudSelectItem Value="@item.Metadata.Name">@item.Metadata.Name</MudSelectItem>
                 }
             }
         </MudSelect>
+
         <MudButton OnClick="@((e) => DarkMode())" Color="Color.Primary" Variant="Variant.Filled">Toggle Dark/Light Mode</MudButton>
     </MudAppBar>
     <MudDrawer @bind-Open="@open" ClipMode="DrawerClipMode.Always" Elevation="1">
@@ -25,15 +27,19 @@
         </MudDrawerHeader>
         <MudNavMenu>
             <MudNavLink Href="/dashboard">Dashboard</MudNavLink>
-            <MudNavLink Href="/nodes">Nodes</MudNavLink>
-            <MudNavLink Href="/deps">Deployments</MudNavLink>
-            <MudNavLink Href="/statefulsets">Stateful Sets</MudNavLink>
-            <MudNavLink Href="/pods">Pods</MudNavLink>
-            <MudNavLink Href="/services">Services</MudNavLink>
-            <MudNavLink Href="/pvs">Persistent Volumes</MudNavLink>
-            <MudNavLink Href="/pvcs">Persistent Volume Claims</MudNavLink>
-            <MudNavLink Href="/scs">Storage Classes</MudNavLink>
-            <MudNavLink Href="/newdeploy">New Deployment</MudNavLink>
+            <MudNavGroup Title="Cluster">
+                <MudNavLink Href="/nodes">Nodes</MudNavLink>
+                <MudNavLink Href="/pvs">Persistent Volumes</MudNavLink>
+                <MudNavLink Href="/scs">Storage Classes</MudNavLink>
+            </MudNavGroup>
+            <MudNavGroup Title="Namespace">
+                <MudText Typo="Typo.body2" Class="px-4 mud-text-secondary">@SelectedNamespace</MudText>
+                <MudNavLink Href="/deps">Deployments</MudNavLink>
+                <MudNavLink Href="/statefulsets">Stateful Sets</MudNavLink>
+                <MudNavLink Href="/pods">Pods</MudNavLink>
+                <MudNavLink Href="/services">Services</MudNavLink>
+                <MudNavLink Href="/pvcs">Persistent Volume Claims</MudNavLink>
+            </MudNavGroup>
         </MudNavMenu>
     </MudDrawer>
     <MudMainContent Class="pt-16 px-16">
@@ -45,29 +51,29 @@
 
 @code{
     bool open = true;
+    private string _selectedNamespace { get; set; } = "default";
+
+    private string SelectedNamespace { get { return _selectedNamespace; } set { _selectedNamespace = value; Dispatcher.Dispatch(new GlobalDataFetchDataAction(value)); } }
 
     private bool IsDarkMode { get; set; } = false;
 
     private V1NamespaceList Namespaces = new V1NamespaceList();
 
-    private string CurrentNamespace = "default";
-
-    [Inject]
-    private IState<LoadDataState> KubeStateState { get; set; }
 
     [Inject]
     private IDispatcher Dispatcher { get; set; }
 
+
     protected override async Task OnInitializedAsync()
     {
+       
         currentTheme = defaultTheme;
         await LoadNamespaces();
-        base.OnInitialized();
+        await base.OnInitializedAsync();
     }
-
     async Task LoadNamespaces()
     {
-        //Namespaces = await KubernetesService.GetNamespaces();
+        Namespaces = await KubernetesService.GetNamespaces();
     }
     void ToggleDrawer()
     {
@@ -118,8 +124,5 @@
             TextDisabled = "rgba(255,255,255, 0.2)"
         }
     };
-    private void OnSelectedValue(string value)
-    {
-        Dispatcher.Dispatch(new LoadDataFetchDataAction(value));
-    }
+
 }

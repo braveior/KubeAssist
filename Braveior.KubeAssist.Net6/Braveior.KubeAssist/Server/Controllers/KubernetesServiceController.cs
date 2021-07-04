@@ -1,5 +1,4 @@
-﻿using Braveior.KubeAssist.Shared;
-using k8s;
+﻿using k8s;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
@@ -169,8 +168,15 @@ namespace Braveior.KubeAssist.Server.Controllers
         [HttpGet("getpodlogs/{name}/{ns}")]
         public async Task<IActionResult> GetPodLogs(string name, string ns)
         {
-            //var config = KubernetesClientConfiguration.InClusterConfig();
-            var config = KubernetesClientConfiguration.BuildConfigFromConfigFile();
+            KubernetesClientConfiguration config;
+            if (KubernetesClientConfiguration.IsInCluster())
+            {
+                config = KubernetesClientConfiguration.InClusterConfig();
+            }
+            else
+            {
+                config = KubernetesClientConfiguration.BuildConfigFromConfigFile();
+            }
             IKubernetes client = new Kubernetes(config);
             var response = await client.ReadNamespacedPodLogWithHttpMessagesAsync(name, ns, follow: false).ConfigureAwait(false);
             var stream = response.Body;
@@ -186,7 +192,15 @@ namespace Braveior.KubeAssist.Server.Controllers
         [HttpGet("getnodes")]
         public async Task<IActionResult> GetNodes()
         {
-            var config = KubernetesClientConfiguration.BuildConfigFromConfigFile();
+            KubernetesClientConfiguration config;
+            if (KubernetesClientConfiguration.IsInCluster())
+            {
+                config = KubernetesClientConfiguration.InClusterConfig();
+            }
+            else
+            {
+                config = KubernetesClientConfiguration.BuildConfigFromConfigFile();
+            }
             IKubernetes client = new Kubernetes(config);
             var nodes = await client.ListNodeAsync().ConfigureAwait(false);
             return Content(JsonConvert.SerializeObject(nodes), "application/json");
@@ -194,8 +208,15 @@ namespace Braveior.KubeAssist.Server.Controllers
         [HttpGet("getpods/{ns}")]
         public async Task<IActionResult> GetPods(string ns)
         {
-            //var config = KubernetesClientConfiguration.InClusterConfig();
-            var config = KubernetesClientConfiguration.BuildConfigFromConfigFile();
+            KubernetesClientConfiguration config;
+            if (KubernetesClientConfiguration.IsInCluster())
+            {
+                config = KubernetesClientConfiguration.InClusterConfig();
+            }
+            else
+            {
+                config = KubernetesClientConfiguration.BuildConfigFromConfigFile();
+            }
             IKubernetes client = new Kubernetes(config);
             var pods = await client.ListNamespacedPodAsync(ns).ConfigureAwait(false);
             return Content(JsonConvert.SerializeObject(pods), "application/json");
@@ -203,8 +224,15 @@ namespace Braveior.KubeAssist.Server.Controllers
         [HttpGet("getpod/{podname}/{ns}")]
         public async Task<IActionResult> GetPod(string podname, string ns)
         {
-            //var config = KubernetesClientConfiguration.InClusterConfig();
-            var config = KubernetesClientConfiguration.BuildConfigFromConfigFile();
+            KubernetesClientConfiguration config;
+            if (KubernetesClientConfiguration.IsInCluster())
+            {
+                config = KubernetesClientConfiguration.InClusterConfig();
+            }
+            else
+            {
+                config = KubernetesClientConfiguration.BuildConfigFromConfigFile();
+            }
             IKubernetes client = new Kubernetes(config);
             var pod = await client.ReadNamespacedPodAsync(podname, ns).ConfigureAwait(false);
             return Content(JsonConvert.SerializeObject(pod), "application/json");
@@ -212,8 +240,15 @@ namespace Braveior.KubeAssist.Server.Controllers
         [HttpGet("getdeployments/{ns}")]
         public async Task<IActionResult> GetDeployments(string ns)
         {
-            //var config = KubernetesClientConfiguration.InClusterConfig();
-            var config = KubernetesClientConfiguration.BuildConfigFromConfigFile();
+            KubernetesClientConfiguration config;
+            if (KubernetesClientConfiguration.IsInCluster())
+            {
+                config = KubernetesClientConfiguration.InClusterConfig();
+            }
+            else
+            {
+                config = KubernetesClientConfiguration.BuildConfigFromConfigFile();
+            }
             IKubernetes client = new Kubernetes(config);
             var deployments = await client.ListNamespacedDeploymentAsync(ns).ConfigureAwait(false);
             return Content(JsonConvert.SerializeObject(deployments), "application/json");
@@ -229,8 +264,15 @@ namespace Braveior.KubeAssist.Server.Controllers
         [HttpGet("getdeployment/{name}/{ns}")]
         public async Task<IActionResult> GetDeployment(string name, string ns)
         {
-            //var config = KubernetesClientConfiguration.InClusterConfig();
-            var config = KubernetesClientConfiguration.BuildConfigFromConfigFile();
+            KubernetesClientConfiguration config;
+            if (KubernetesClientConfiguration.IsInCluster())
+            {
+                config = KubernetesClientConfiguration.InClusterConfig();
+            }
+            else
+            {
+                config = KubernetesClientConfiguration.BuildConfigFromConfigFile();
+            }
             IKubernetes client = new Kubernetes(config);
             var deployment = await client.ReadNamespacedDeploymentAsync(name, ns).ConfigureAwait(false);
             return Content(JsonConvert.SerializeObject(deployment), "application/json");
@@ -238,8 +280,15 @@ namespace Braveior.KubeAssist.Server.Controllers
         [HttpGet("getservices/{ns}")]
         public async Task<IActionResult> GetServices(string ns)
         {
-            //var config = KubernetesClientConfiguration.InClusterConfig();
-            var config = KubernetesClientConfiguration.BuildConfigFromConfigFile();
+            KubernetesClientConfiguration config;
+            if (KubernetesClientConfiguration.IsInCluster())
+            {
+                config = KubernetesClientConfiguration.InClusterConfig();
+            }
+            else
+            {
+                config = KubernetesClientConfiguration.BuildConfigFromConfigFile();
+            }
             IKubernetes client = new Kubernetes(config);
             var services = await client.ListNamespacedServiceAsync(ns).ConfigureAwait(false);
             return Content(JsonConvert.SerializeObject(services), "application/json");
@@ -247,8 +296,15 @@ namespace Braveior.KubeAssist.Server.Controllers
         [HttpGet("getservice/{name}/{ns}")]
         public async Task<IActionResult> GetService(string name, string ns)
         {
-            //var config = KubernetesClientConfiguration.InClusterConfig();
-            var config = KubernetesClientConfiguration.BuildConfigFromConfigFile();
+            KubernetesClientConfiguration config;
+            if (KubernetesClientConfiguration.IsInCluster())
+            {
+                config = KubernetesClientConfiguration.InClusterConfig();
+            }
+            else
+            {
+                config = KubernetesClientConfiguration.BuildConfigFromConfigFile();
+            }
             IKubernetes client = new Kubernetes(config);
             var service = await client.ReadNamespacedServiceAsync(name, ns).ConfigureAwait(false);
             return Content(JsonConvert.SerializeObject(service), "application/json");
@@ -256,8 +312,15 @@ namespace Braveior.KubeAssist.Server.Controllers
         [HttpGet("getpersistentvolumes/{ns}")]
         public async Task<IActionResult> GetPersistentVolumes(string ns)
         {
-            //var config = KubernetesClientConfiguration.InClusterConfig();
-            var config = KubernetesClientConfiguration.BuildConfigFromConfigFile();
+            KubernetesClientConfiguration config;
+            if (KubernetesClientConfiguration.IsInCluster())
+            {
+                config = KubernetesClientConfiguration.InClusterConfig();
+            }
+            else
+            {
+                config = KubernetesClientConfiguration.BuildConfigFromConfigFile();
+            }
             IKubernetes client = new Kubernetes(config);
             var pvs = await client.ListPersistentVolumeAsync().ConfigureAwait(false);
             return Content(JsonConvert.SerializeObject(pvs), "application/json");
@@ -265,8 +328,15 @@ namespace Braveior.KubeAssist.Server.Controllers
         [HttpGet("getpersistentvolume/{name}")]
         public async Task<IActionResult> GetPersistentVolume(string name)
         {
-            //var config = KubernetesClientConfiguration.InClusterConfig();
-            var config = KubernetesClientConfiguration.BuildConfigFromConfigFile();
+            KubernetesClientConfiguration config;
+            if (KubernetesClientConfiguration.IsInCluster())
+            {
+                config = KubernetesClientConfiguration.InClusterConfig();
+            }
+            else
+            {
+                config = KubernetesClientConfiguration.BuildConfigFromConfigFile();
+            }
             IKubernetes client = new Kubernetes(config);
             var pv = await client.ReadPersistentVolumeAsync(name).ConfigureAwait(false);
             return Content(JsonConvert.SerializeObject(pv), "application/json");
@@ -274,8 +344,15 @@ namespace Braveior.KubeAssist.Server.Controllers
         [HttpGet("getstatefulsets/{ns}")]
         public async Task<IActionResult> GetStatefulSets(string ns)
         {
-            //var config = KubernetesClientConfiguration.InClusterConfig();
-            var config = KubernetesClientConfiguration.BuildConfigFromConfigFile();
+            KubernetesClientConfiguration config;
+            if (KubernetesClientConfiguration.IsInCluster())
+            {
+                config = KubernetesClientConfiguration.InClusterConfig();
+            }
+            else
+            {
+                config = KubernetesClientConfiguration.BuildConfigFromConfigFile();
+            }
             IKubernetes client = new Kubernetes(config);
             var sfs = await client.ListNamespacedStatefulSetAsync(ns).ConfigureAwait(false);
             return Content(JsonConvert.SerializeObject(sfs), "application/json");
@@ -283,8 +360,15 @@ namespace Braveior.KubeAssist.Server.Controllers
         [HttpGet("getstatefulset/{name}/{ns}")]
         public async Task<IActionResult> GetStatefulSet(string name, string ns)
         {
-            //var config = KubernetesClientConfiguration.InClusterConfig();
-            var config = KubernetesClientConfiguration.BuildConfigFromConfigFile();
+            KubernetesClientConfiguration config;
+            if (KubernetesClientConfiguration.IsInCluster())
+            {
+                config = KubernetesClientConfiguration.InClusterConfig();
+            }
+            else
+            {
+                config = KubernetesClientConfiguration.BuildConfigFromConfigFile();
+            }
             IKubernetes client = new Kubernetes(config);
             var sf=  await client.ReadNamespacedStatefulSetAsync(name, ns).ConfigureAwait(false);
             return Content(JsonConvert.SerializeObject(sf), "application/json");
@@ -292,8 +376,15 @@ namespace Braveior.KubeAssist.Server.Controllers
         [HttpGet("getpersistentvolumeclaims/{ns}")]
         public async Task<IActionResult> GetPersistentVolumeClaims(string ns)
         {
-            //var config = KubernetesClientConfiguration.InClusterConfig();
-            var config = KubernetesClientConfiguration.BuildConfigFromConfigFile();
+            KubernetesClientConfiguration config;
+            if (KubernetesClientConfiguration.IsInCluster())
+            {
+                config = KubernetesClientConfiguration.InClusterConfig();
+            }
+            else
+            {
+                config = KubernetesClientConfiguration.BuildConfigFromConfigFile();
+            }
             IKubernetes client = new Kubernetes(config);
             var pvcs = await client.ListNamespacedPersistentVolumeClaimAsync(ns).ConfigureAwait(false);
             return Content(JsonConvert.SerializeObject(pvcs), "application/json");
@@ -301,8 +392,15 @@ namespace Braveior.KubeAssist.Server.Controllers
         [HttpGet("getpersistentvolumeclaim/{name}/{ns}")]
         public async Task<IActionResult> GetPersistentVolumeClaim(string name, string ns)
         {
-            //var config = KubernetesClientConfiguration.InClusterConfig();
-            var config = KubernetesClientConfiguration.BuildConfigFromConfigFile();
+            KubernetesClientConfiguration config;
+            if (KubernetesClientConfiguration.IsInCluster())
+            {
+                config = KubernetesClientConfiguration.InClusterConfig();
+            }
+            else
+            {
+                config = KubernetesClientConfiguration.BuildConfigFromConfigFile();
+            }
             IKubernetes client = new Kubernetes(config);
             var pvc = await client.ReadNamespacedPersistentVolumeClaimAsync(name, ns).ConfigureAwait(false);
             return Content(JsonConvert.SerializeObject(pvc), "application/json");
@@ -310,8 +408,15 @@ namespace Braveior.KubeAssist.Server.Controllers
         [HttpGet("getstorageclasses")]
         public async Task<IActionResult> GetStorageClasses()
         {
-            //var config = KubernetesClientConfiguration.InClusterConfig();
-            var config = KubernetesClientConfiguration.BuildConfigFromConfigFile();
+            KubernetesClientConfiguration config;
+            if (KubernetesClientConfiguration.IsInCluster())
+            {
+                config = KubernetesClientConfiguration.InClusterConfig();
+            }
+            else
+            {
+                config = KubernetesClientConfiguration.BuildConfigFromConfigFile();
+            }
             IKubernetes client = new Kubernetes(config);
             var sc = await client.ListStorageClassAsync().ConfigureAwait(false);
             return Content(JsonConvert.SerializeObject(sc), "application/json");
@@ -319,7 +424,15 @@ namespace Braveior.KubeAssist.Server.Controllers
         [HttpGet("getnamespaces")]
         public async Task<IActionResult> GetNamespaces()
         {
-            var config = KubernetesClientConfiguration.BuildConfigFromConfigFile();
+            KubernetesClientConfiguration config;
+            if (KubernetesClientConfiguration.IsInCluster())
+            {
+                config = KubernetesClientConfiguration.InClusterConfig();
+            }
+            else
+            {
+                config = KubernetesClientConfiguration.BuildConfigFromConfigFile();
+            }
             IKubernetes client = new Kubernetes(config);
             var namespaces = await client.ListNamespaceAsync().ConfigureAwait(false);
             return Content(JsonConvert.SerializeObject(namespaces), "application/json");

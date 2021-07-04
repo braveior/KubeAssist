@@ -24,11 +24,19 @@ namespace Braveior.KubeAssist.Services
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-           // using var logger = new LoggerConfiguration()
-           //.WriteTo.Console()
-           //.CreateLogger();
-            var config = KubernetesClientConfiguration.BuildConfigFromConfigFile();
-            //var config = KubernetesClientConfiguration.InClusterConfig();
+            // using var logger = new LoggerConfiguration()
+            //.WriteTo.Console()
+            //.CreateLogger();
+            KubernetesClientConfiguration config;
+            if (KubernetesClientConfiguration.IsInCluster())
+            {
+                config = KubernetesClientConfiguration.InClusterConfig();
+            }
+            else
+            {
+                config = KubernetesClientConfiguration.BuildConfigFromConfigFile();
+            }
+            
             var kclient = new Kubernetes(config);
             var settings = new ConnectionSettings(new Uri("http://192.168.0.112:9200/"));
             //var settings = new ConnectionSettings(new Uri(GetEnvironmentVariable("elasticuri")));
@@ -74,13 +82,13 @@ namespace Braveior.KubeAssist.Services
                 foreach (var metric in podMetrics.Items)
                 {
                     var podMetric = new PodMetric() { Name = metric.Metadata.Name, Namespace = metric.Metadata.NamespaceProperty };
-                    int cpu = 0;
+                    long cpu = 0;
                     long memory = 0;
                     foreach (var container in metric.Containers)
                     {
                         //Refactoring needed
-                        cpu += Int32.Parse(container.Usage["cpu"].ToString().Replace("m", ""));
-                        memory += Int32.Parse((container.Usage["memory"].ToString().Replace("Ki", "")));
+                        cpu += Int64.Parse(container.Usage["cpu"].ToString().Replace("n", ""))/ 1000000;
+                        memory += Int64.Parse((container.Usage["memory"].ToString().Replace("Ki", "")));
                     }
                     podMetric.CPU = cpu;
                     podMetric.Memory = memory;
@@ -98,15 +106,15 @@ namespace Braveior.KubeAssist.Services
             ClusterMetric clusterMetric = new ClusterMetric();
             if (nodeMetrics != null && nodeMetrics.Items != null)
             {
-                int cpu = 0;
+                long cpu = 0;
                 long memory = 0;
 
                 foreach (var metric in nodeMetrics.Items)
                 {
 
                     //Refactoring needed
-                    cpu += Int32.Parse(metric.Usage["cpu"].ToString().Replace("m", ""));
-                    memory += Int32.Parse((metric.Usage["memory"].ToString().Replace("Ki", "")));
+                    cpu += Int64.Parse(metric.Usage["cpu"].ToString().Replace("n", "")) / 1000000;
+                    memory += Int64.Parse((metric.Usage["memory"].ToString().Replace("Ki", "")));
                 }
                 clusterMetric = new ClusterMetric() { Name = "cluster", CPU = cpu, Memory = memory, TimeStamp = DateTime.Now.ToUniversalTime() };
             }
@@ -121,7 +129,7 @@ namespace Braveior.KubeAssist.Services
             {
                 //if(ns.Name.Equals(""))
                 var nsPods = podMetrics.Where(a => a.Namespace.Equals(ns.Metadata.Name));
-                int cpu = 0;
+                long cpu = 0;
                 long memory = 0;
                 foreach (var pod in nsPods)
                 {

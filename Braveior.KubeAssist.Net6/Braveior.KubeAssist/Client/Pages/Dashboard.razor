@@ -14,14 +14,14 @@
 <MudGrid>
     <MudItem lg="8">
         <MudButtonGroup Color="MudBlazor.Color.Primary" Variant="Variant.Outlined">
-            <MudButton @onclick="GenerteMonthNSChart">Month</MudButton>
-            <MudButton @onclick="GenerteWeekNSChart">Week</MudButton>
-            <MudButton @onclick="GenerteDayNSChart">Day</MudButton>
+            <MudButton @onclick="GenerateMonthNSChart">Month</MudButton>
+            <MudButton @onclick="GenerateWeekNSChart">Week</MudButton>
+            <MudButton @onclick="GenerateDayNSChart">Day</MudButton>
 
         </MudButtonGroup>
     </MudItem>
     <MudItem lg="4">
-        <MudButton @onclick="@((e) => LoadDashboard(true))">Refresh</MudButton>
+        <MudButton @onclick="@((e) => LoadDashboard())">Refresh</MudButton>
     </MudItem>
     <MudItem lg="6">
         <MudPaper Class="mt-16" Elevation="3">
@@ -108,13 +108,16 @@
     [Inject]
     private IDispatcher Dispatcher { get; set; }
 
+     [Inject]
+    private IState<GlobalDataState> CommonState { get; set; }
+
     Queue<System.Drawing.Color> SysColors { get; set; } = new Queue<System.Drawing.Color>();
 
-    List<string> Namespaces = new List<string>() { "default" };
     List<NamespaceMetric> NamespaceMetrics = new List<NamespaceMetric>();
 
     private static List<V1Pod> PodList { get; set; } = new List<V1Pod>();
 
+    private string Namespace = "default";
 
     private void BuildSysColorsQueue()
     {
@@ -130,23 +133,29 @@
     }
     protected override async Task OnInitializedAsync()
     {
-        ToggleOverlay(true);
         BuildSysColorsQueue();
+
         configNSCPU = GetLineChartConfig("Namespace CPU Trend");
         configNSMemory = GetLineChartConfig("Namespace Memory Trend");
         configClusterCPU = GetPieChartConfig("Cluster CPU");
         configClusterMemory = GetPieChartConfig("Cluster Memory");
         configClusterPods = GetPieChartConfig("Cluster Pods");
-        await LoadDashboard(false);
-        ToggleOverlay(false);
+        await LoadDashboard();
+        
         await base.OnInitializedAsync();
 
     }
-    private async Task LoadDashboard(bool hardReload)
+    private async Task LoadDashboard()
     {
-        await GenerateNamespaceCharts("7");
+        if(CommonState.Value.KNamespace !=null)
+        {
+            Namespace = CommonState.Value.KNamespace;
+        }
+        ToggleOverlay(true);
+        await GenerateNamespaceCharts("7", Namespace);
         await GenerateClusterPieCharts();
         await LoadPods();
+        ToggleOverlay(false);
     }
     private System.Drawing.Color GetNextSystemColor()
     {
@@ -154,25 +163,23 @@
         SysColors.Enqueue(color);
         return color;
     }
-    private async Task GenerteMonthNSChart()
+    private async Task GenerateMonthNSChart()
     {
-        await GenerateNamespaceCharts("30");
+        await GenerateNamespaceCharts("30",Namespace);
     }
-    private async Task GenerteWeekNSChart()
+    private async Task GenerateWeekNSChart()
     {
-        await GenerateNamespaceCharts("14");
+        await GenerateNamespaceCharts("14",Namespace);
     }
-    private async Task GenerteDayNSChart()
+    private async Task GenerateDayNSChart()
     {
-        await GenerateNamespaceCharts("5");
+        await GenerateNamespaceCharts("5",Namespace);
     }
-    private async Task GenerateNamespaceCharts(string day)
+    private async Task GenerateNamespaceCharts(string day,string ns)
     {
         configNSCPU.Data.Datasets.Clear();
         configNSMemory.Data.Datasets.Clear();
 
-        foreach (var ns in Namespaces)
-        {
             var metricResult = await KubernetesService.GetNamespaceMetricResult(ns, day);
 
             var datasetCpu = new LineDataset<double>()
@@ -207,7 +214,7 @@
                 configNSCPU.Data.Datasets.Add(datasetCpu);
                 configNSMemory.Data.Datasets.Add(datasetMemory);
             }
-        }
+        
     }
 
     private async Task GenerateClusterPieCharts()

@@ -13,18 +13,42 @@
         <MudItem lg="4">
             <MudTextField @bind-Value="Deployment.Metadata.Name" Label="Name" Variant="Variant.Text" Margin="Margin.Dense" />
         </MudItem>
-        <MudItem lg="4">
+        <MudItem lg="2">
             <MudTextField @bind-Value="Deployment.Metadata.NamespaceProperty" Label="Namespace" Variant="Variant.Text" Margin="Margin.Dense" />
         </MudItem>
-        <MudItem lg="4">
+        <MudItem lg="2">
             <MudTextField @bind-Value="Deployment.Status.AvailableReplicas" Label="Available Replicas" Variant="Variant.Text" Margin="Margin.Dense" />
         </MudItem>
 
-        <MudItem lg="6">
+        <MudItem lg="2">
             <MudTextField @bind-Value="Deployment.Status.Replicas" Label="Total Replicas" Variant="Variant.Text" Margin="Margin.Dense" />
         </MudItem>
-        <MudItem lg="6">
+        <MudItem lg="2">
             <MudTextField @bind-Value="Deployment.Metadata.CreationTimestamp" Label="Created Date" Variant="Variant.Text" Margin="Margin.Dense" />
+        </MudItem>
+        <MudItem lg="12">
+            <MudText Typo="Typo.h4">Conditions</MudText>
+        </MudItem>
+        <MudItem lg="12">
+        <MudTable Dense="true" Items="@DeploymentConditions" Hover="true" Breakpoint="Breakpoint.Sm">
+            <HeaderContent>
+                <MudTh>Name</MudTh>
+                <MudTh>Namespace</MudTh>
+                <MudTh>UID</MudTh>
+                <MudTh>PodIP</MudTh>
+                <MudTh>StartTime</MudTh>
+                <MudTh>CreatedTime</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="Type">@context.Type</MudTd>
+                <MudTd DataLabel="Status">@context.Status</MudTd>
+                <MudTd DataLabel="Reason">@context.Reason</MudTd>
+                <MudTd DataLabel="Message">@context.Message</MudTd>
+                <MudTd DataLabel="Last Transition Time">@context.LastTransitionTime</MudTd>
+                <MudTd DataLabel="Last Update Time">@context.LastUpdateTime</MudTd>
+            </RowTemplate>
+
+        </MudTable>
         </MudItem>
 
         <MudItem lg="12">
@@ -47,7 +71,7 @@
         <MudItem lg="12">
             <MudText Typo="Typo.h4">Label Matching Pods</MudText>
         </MudItem>
-
+        <MudItem lg="12">
         <MudTable Dense="true" Items="@PodList" Hover="true" Breakpoint="Breakpoint.Sm">
             <HeaderContent>
                 <MudTh>Name</MudTh>
@@ -67,25 +91,27 @@
             </RowTemplate>
 
         </MudTable>
-
+        </MudItem>
     </MudGrid>
-    <div class="editorContent">
+@*    <div class="editorContent">
         <MonacoEditorYaml @ref="_yamlEditor" Id="monacoEditorYaml" Value="YamlText" CssClass="editor" />
-        </div>
+        </div>*@
   }
 
 @code
 {
-            [Parameter]
+    [Parameter]
             public string Name { get; set; }
 
-    private MonacoEditorYaml _yamlEditor { get; set; }
+    //private MonacoEditorYaml _yamlEditor { get; set; }
 
-        private string YamlText { get; set; }
+        //private string YamlText { get; set; }
 
         private V1Deployment Deployment { get; set; } = new V1Deployment();
 
         private List<V1Pod> PodList { get; set; } = new List<V1Pod>();
+
+    private List<V1DeploymentCondition> DeploymentConditions { get; set; } = new List<V1DeploymentCondition>();
 
 
         protected override async Task OnInitializedAsync()
@@ -97,8 +123,8 @@
         private async Task LoadDeploymentDetail()
         {
             Deployment = await KubernetesService.GetDeployment(Name, "default");
-
-            //Need refactoring
+            DeploymentConditions = Deployment.Status.Conditions.ToList();
+        //Need refactoring
          //   var serializer = new SerializerBuilder()
          //.WithNamingConvention(CamelCaseNamingConvention.Instance)
          //.Build();

@@ -1,3 +1,5 @@
+using Braveior.KubeAssist.Server.Services;
+using Braveior.KubeAssist.Services;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.ResponseCompression;
@@ -21,18 +23,11 @@ namespace Braveior.KubeAssist.Server
         // For more information on how to configure your application, visit https://go.microsoft.com/fwlink/?LinkID=398940
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddCors(o => o.AddPolicy("AllowAll", builder =>
-            {
-                builder.AllowAnyOrigin()
-                       .AllowAnyMethod()
-                       .AllowAnyHeader()
-                       .WithExposedHeaders("Grpc-Status", "Grpc-Message", "Grpc-Encoding", "Grpc-Accept-Encoding"); ;
-
-            }));
-            services.AddGrpc();
             services.AddControllers();
             services.AddControllersWithViews();
             services.AddRazorPages();
+            services.AddHostedService<Agent>();
+            services.AddHostedService<MetricsCollectionService>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -53,7 +48,6 @@ namespace Braveior.KubeAssist.Server
 
             app.UseRouting();
             app.UseCors();
-            app.UseGrpcWeb();
 
             app.UseEndpoints(endpoints =>
             {

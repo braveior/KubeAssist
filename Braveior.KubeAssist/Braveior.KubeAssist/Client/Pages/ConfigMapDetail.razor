@@ -1,0 +1,50 @@
+﻿@page "/configmapdetail/{name}"
+
+@using Braveior.KubeAssist.Services
+@using Braveior.KubeAssist.Services.Models
+@inject IKubernetesService KubernetesService
+
+<MudText Typo="Typo.h6">Config Map Details</MudText>
+@if (ConfigMap.Metadata != null)
+{
+<MudGrid>
+    <MudItem lg="6">
+        <MudTextField @bind-Value="ConfigMap.Metadata.Name" Label="Name" Variant="Variant.Text" Margin="Margin.Dense" />
+    </MudItem>
+    <MudItem lg="6">
+        <MudTextField @bind-Value="ConfigMap.Metadata.NamespaceProperty" Label="Namespace" Variant="Variant.Text" Margin="Margin.Dense" />
+    </MudItem>
+    <MudItem lg="12"><MudText Typo="Typo.h6">Data</MudText></MudItem>
+    @foreach (var key in ConfigMap.Data.Keys)
+    {
+        <MudItem lg="6"><MudText Typo="Typo.subtitle1">@key</MudText></MudItem>
+        <MudItem lg="6"><MudText Typo="Typo.subtitle1">@ConfigMap.Data[key]</MudText></MudItem>
+        <MudItem lg="12"><MudDivider DividerType="DividerType.Middle" Class="my-6" /></MudItem>
+    }
+
+
+</MudGrid>
+
+}
+
+    @code
+{
+        [Parameter]
+        public string Name { get; set; }
+
+        private V1ConfigMap ConfigMap { get; set; } = new V1ConfigMap();
+
+
+        protected override async Task OnInitializedAsync()
+        {
+            await LoadConfigMapDetail();
+            base.OnInitialized();
+        }
+        private async Task LoadConfigMapDetail()
+        {
+            ConfigMap = await KubernetesService.GetConfigMap(Name, "default");
+
+            StateHasChanged();
+        }
+        
+    }

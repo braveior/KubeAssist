@@ -1,8 +1,6 @@
 using Braveior.KubeAssist.Services.Models;
-using Elasticsearch.Net;
 using k8s;
 using k8s.Models;
-using Nest;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -47,6 +45,8 @@ namespace Braveior.KubeAssist.Services
         Task<V1StatefulSet> GetStatefulSet(string name, string ns);
 
         Task<V1StorageClassList> GetStorageClasses();
+
+        Task<V1NamespaceList> GetNamespaces();
 
 
     }

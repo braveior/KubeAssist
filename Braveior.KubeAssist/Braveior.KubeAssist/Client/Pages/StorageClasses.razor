@@ -1,0 +1,53 @@
+﻿@page "/scs"
+
+@using Braveior.KubeAssist.Services
+@using Braveior.KubeAssist.Services.Models
+@inject IKubernetesService KubernetesService
+
+<MudTable Dense="true"  Items="@SCList" Hover="true" Breakpoint="Breakpoint.Sm">
+    <HeaderContent>
+        <MudTh>Name</MudTh>
+        <MudTh>Provisioner</MudTh>
+        <MudTh>ReclaimPolicy</MudTh>
+        <MudTh>Volume Binding Mode</MudTh>
+        <MudTh>Created Date</MudTh>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd DataLabel="Name">@context.Metadata.Name</MudTd>
+        <MudTd DataLabel="Provisioner">@context.Provisioner</MudTd>
+        <MudTd DataLabel="ReclaimPolicy">@context.ReclaimPolicy</MudTd>
+        <MudTd DataLabel="VolumeBindingMode">@context.VolumeBindingMode</MudTd>
+        <MudTd DataLabel="CreatedDate">@context.Metadata.CreationTimestamp</MudTd>
+    </RowTemplate>
+ </MudTable>
+
+
+@code
+{
+    private bool isVisible;
+    protected override async Task OnInitializedAsync()
+    {
+        ToggleOverlay(true);
+        await LoadStorageClasses();
+        ToggleOverlay(false);
+        base.OnInitialized();
+    }
+
+    private async Task LoadStorageClasses()
+    {
+        var storageclasses = await KubernetesService.GetStorageClasses();
+        if (storageclasses.Items != null)
+        {
+            SCList = storageclasses.Items.ToList();
+        }
+        StateHasChanged();
+    }
+    private static List<V1StorageClass> SCList { get; set; }
+
+    private void ToggleOverlay(bool visible)
+    {
+        isVisible = visible;
+        StateHasChanged();
+    }
+
+}

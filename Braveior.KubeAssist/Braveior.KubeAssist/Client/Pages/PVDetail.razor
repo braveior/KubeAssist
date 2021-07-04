@@ -1,0 +1,71 @@
+﻿@page "/pvdetail/{Name}"
+@using System.Text;
+@using ChartJs.Blazor.PieChart
+@using Braveior.KubeAssist.Services
+@using Braveior.KubeAssist.Services.Models
+@inject IKubernetesService KubernetesService
+@inject IDialogService DialogService
+
+
+<MudText Typo="Typo.h6">Persistent Volume Details</MudText>
+@if (PV.Metadata != null)
+{
+<MudGrid>
+    <MudItem lg="4">
+        <MudTextField @bind-Value="PV.Metadata.Name" Label="Name" Variant="Variant.Text" Margin="Margin.Dense" />
+    </MudItem>
+    <MudItem lg="4">
+        <MudTextField @bind-Value="PV.Metadata.ClusterName" Label="Cluster Name" Variant="Variant.Text" Margin="Margin.Dense" />
+    </MudItem>
+    <MudItem lg="4">
+        <MudTextField @bind-Value="PV.Metadata.CreationTimestamp" Label="Created Time" Variant="Variant.Text" Margin="Margin.Dense" />
+    </MudItem>
+    <MudItem lg="4">
+        <MudTextField @bind-Value="PV.Status.Phase" Label="Phase" Variant="Variant.Text" Margin="Margin.Dense" />
+    </MudItem>
+    <MudItem lg="4">
+        <MudTextField @bind-Value="PV.Status.Message" Label="Message" Variant="Variant.Text" Margin="Margin.Dense" />
+    </MudItem>
+    <MudItem lg="4">
+        <MudTextField @bind-Value="PV.Status.Reason" Label="Reason" Variant="Variant.Text" Margin="Margin.Dense" />
+    </MudItem>
+    <MudItem lg="12">
+        <MudText Typo="Typo.h6">Access Modes</MudText>
+        <MudText Typo="Typo.subtitle1">@GetAccessModes(PV.Spec.AccessModes)</MudText>
+    </MudItem>
+</MudGrid>
+
+}
+
+@code
+{
+    [Parameter]
+    public string Name { get; set; }
+
+    private V1PersistentVolume PV { get; set; } = new V1PersistentVolume();
+
+
+    protected override async Task OnInitializedAsync()
+    {
+
+        await LoadNode();
+
+        await base.OnInitializedAsync();
+    }
+    private async Task LoadNode()
+    {
+        PV = await KubernetesService.GetPersistentVolume(Name);
+        StateHasChanged();
+
+    }
+    private string GetAccessModes(IList<string> accessModes)
+    {
+        var accessModesList = "";
+        foreach (string accessmode in accessModes)
+        {
+            accessModesList += $"{accessmode}|";
+        }
+        return accessModesList.TrimEnd('|');
+    }
+
+}

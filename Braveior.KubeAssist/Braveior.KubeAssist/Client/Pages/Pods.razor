@@ -1,0 +1,78 @@
+﻿@page "/pods"
+
+@using Braveior.KubeAssist.Services
+@using Braveior.KubeAssist.Services.Models
+@inject IKubernetesService KubernetesService
+@inject NavigationManager NavigationManager
+
+<MudTable Dense="true" Items="@PodList" Hover="true" Breakpoint="Breakpoint.Sm">
+    <HeaderContent>
+        <MudTh></MudTh>
+        <MudTh>Name</MudTh>
+        <MudTh>UID</MudTh>
+        <MudTh>CreatedTime</MudTh>
+        <MudTh>Status</MudTh>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd><MudButton Variant="Variant.Outlined" Size="MudBlazor.Size.Small" OnClick="@(() => NavigatePodDetails(@context.Metadata.Name))">Details</MudButton></MudTd>
+        <MudTd DataLabel="Name">@context.Metadata.Name</MudTd>
+        <MudTd DataLabel="UID">@context.Metadata.Uid</MudTd>
+        <MudTd DataLabel="CreatedTime">@context.Metadata.CreationTimestamp</MudTd>
+        @if (context.Status.ContainerStatuses[0].State.Running != null)
+        {
+            <MudTd DataLabel="Status"><MudIcon Icon="@Icons.Material.Filled.CheckCircle" Color="Color.Success" />Running</MudTd>
+        }
+        else if (context.Status.ContainerStatuses[0].State.Terminated != null)
+        {
+            <MudTd DataLabel="Status"><MudIcon Icon="@Icons.Material.Filled.Error" Color="Color.Error" />Terminated</MudTd>
+        }
+        else if (context.Status.ContainerStatuses[0].State.Waiting != null)
+        {
+            <MudTd DataLabel="Status">Waiting</MudTd>
+        }
+        
+    </RowTemplate>
+</MudTable>
+
+<MudOverlay @bind-visible="isVisible" DarkBackground="true">
+    <MudProgressCircular Color="MudBlazor.Color.Secondary" Indeterminate="true" />
+</MudOverlay>
+
+@code
+{
+
+    private static List<V1Pod> PodList { get; set; } = new List<V1Pod>() ;
+
+    private bool isVisible;
+
+    protected override async Task OnInitializedAsync()
+    {
+        ToggleOverlay(true);
+        await LoadPods();
+        ToggleOverlay(false);
+        await base.OnInitializedAsync();
+    }
+
+    private async Task LoadPods()
+    {
+
+
+        var pods = await KubernetesService.GetPods("default");
+        if (pods.Items != null)
+        {
+            PodList = pods.Items.ToList();
+        }
+        StateHasChanged();
+
+    }
+
+    private void NavigatePodDetails(string name)
+    {
+        NavigationManager.NavigateTo($"/poddetail/{name}");
+    }
+    private void ToggleOverlay(bool visible)
+    {
+        isVisible = visible;
+        StateHasChanged();
+    }
+}

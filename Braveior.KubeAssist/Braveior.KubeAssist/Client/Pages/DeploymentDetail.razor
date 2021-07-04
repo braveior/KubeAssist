@@ -1,0 +1,172 @@
+﻿@page "/deploymentdetail/{name}"
+
+@using Braveior.KubeAssist.Services
+@using Braveior.KubeAssist.Services.Models
+@inject IKubernetesService KubernetesService
+@inject IDialogService DialogService
+@inherits Fluxor.Blazor.Web.Components.FluxorComponent
+
+<MudText Typo="Typo.h6">Deployment Details</MudText>
+@if (Deployment.Metadata != null)
+{
+    <MudGrid>
+        <MudItem lg="4">
+            <MudTextField @bind-Value="Deployment.Metadata.Name" Label="Name" Variant="Variant.Text" Margin="Margin.Dense" />
+        </MudItem>
+        <MudItem lg="2">
+            <MudTextField @bind-Value="Deployment.Metadata.NamespaceProperty" Label="Namespace" Variant="Variant.Text" Margin="Margin.Dense" />
+        </MudItem>
+        <MudItem lg="2">
+            <MudTextField @bind-Value="Deployment.Status.AvailableReplicas" Label="Available Replicas" Variant="Variant.Text" Margin="Margin.Dense" />
+        </MudItem>
+
+        <MudItem lg="2">
+            <MudTextField @bind-Value="Deployment.Status.Replicas" Label="Total Replicas" Variant="Variant.Text" Margin="Margin.Dense" />
+        </MudItem>
+        <MudItem lg="2">
+            <MudTextField @bind-Value="Deployment.Metadata.CreationTimestamp" Label="Created Date" Variant="Variant.Text" Margin="Margin.Dense" />
+        </MudItem>
+        <MudItem lg="12">
+            <MudText Typo="Typo.h6">Conditions</MudText>
+        </MudItem>
+        <MudItem lg="12">
+            <MudTable Dense="true" Items="@DeploymentConditions" Hover="true" Breakpoint="Breakpoint.Sm">
+                <HeaderContent>
+                    <MudTh>Name</MudTh>
+                    <MudTh>Namespace</MudTh>
+                    <MudTh>UID</MudTh>
+                    <MudTh>PodIP</MudTh>
+                    <MudTh>StartTime</MudTh>
+                    <MudTh>CreatedTime</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="Type">@context.Type</MudTd>
+                    <MudTd DataLabel="Status">@context.Status</MudTd>
+                    <MudTd DataLabel="Reason">@context.Reason</MudTd>
+                    <MudTd DataLabel="Message">@context.Message</MudTd>
+                    <MudTd DataLabel="Last Transition Time">@context.LastTransitionTime</MudTd>
+                    <MudTd DataLabel="Last Update Time">@context.LastUpdateTime</MudTd>
+                </RowTemplate>
+
+            </MudTable>
+        </MudItem>
+
+        <MudItem lg="12">
+            <MudText Typo="Typo.h6">Labels</MudText>
+        </MudItem>
+        <MudItem lg="12">
+            <div Class="d-flex flex-row flex-wrap py-2 px-1">
+                <MudChipSet Filter="true" SelectedChipChanged="MatchPods">
+                    @if (Deployment.Metadata.Labels != null)
+                    {
+                        @foreach (var label in Deployment.Metadata.Labels)
+                        {
+                            <MudChip Text="@(label.Key + "|" + label.Value)" Color="Color.Primary" Variant="Variant.Outlined" Size="MudBlazor.Size.Medium"></MudChip>
+                        }
+                    }
+                </MudChipSet>
+            </div>
+        </MudItem>
+
+        <MudItem lg="12">
+            <MudText Typo="Typo.h6">Label Matching Pods</MudText>
+        </MudItem>
+        <MudItem lg="12">
+            <MudTable Dense="true" Items="@PodList" Hover="true" Breakpoint="Breakpoint.Sm">
+                <HeaderContent>
+                    <MudTh>Name</MudTh>
+                    <MudTh>Namespace</MudTh>
+                    <MudTh>UID</MudTh>
+                    <MudTh>PodIP</MudTh>
+                    <MudTh>StartTime</MudTh>
+                    <MudTh>CreatedTime</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="Name">@context.Metadata.Name</MudTd>
+                    <MudTd DataLabel="Namespace">@context.Metadata.NamespaceProperty</MudTd>
+                    <MudTd DataLabel="UID">@context.Metadata.Uid</MudTd>
+                    <MudTd DataLabel="PodIP">@context.Status.PodIP</MudTd>
+                    <MudTd DataLabel="StartTime">@context.Status.StartTime</MudTd>
+                    <MudTd DataLabel="CreatedTime">@context.Metadata.CreationTimestamp</MudTd>
+                </RowTemplate>
+
+            </MudTable>
+        </MudItem>
+    </MudGrid>
+    @*    <div class="editorContent">
+        <MonacoEditorYaml @ref="_yamlEditor" Id="monacoEditorYaml" Value="YamlText" CssClass="editor" />
+        </div>*@
+}
+
+@code
+{
+    [Parameter]
+    public string Name { get; set; }
+
+    private string Namespace = "default";
+
+    //private MonacoEditorYaml _yamlEditor { get; set; }
+
+    //private string YamlText { get; set; }
+
+    private V1Deployment Deployment { get; set; } = new V1Deployment();
+
+    private List<V1Pod> PodList { get; set; } = new List<V1Pod>();
+
+    private List<V1DeploymentCondition> DeploymentConditions { get; set; } = new List<V1DeploymentCondition>();
+
+
+    [Inject]
+    private IState<GlobalDataState> CommonState { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (CommonState.Value.KNamespace != null)
+        {
+            Namespace = CommonState.Value.KNamespace;
+        }
+        await LoadDeploymentDetail();
+        await base.OnInitializedAsync();
+    }
+    private async Task LoadDeploymentDetail()
+    {
+        Deployment = await KubernetesService.GetDeployment(Name, Namespace);
+        DeploymentConditions = Deployment.Status.Conditions.ToList();
+
+        //Need refactoring
+        //   var serializer = new SerializerBuilder()
+        //.WithNamingConvention(CamelCaseNamingConvention.Instance)
+        //.Build();
+        //   var yaml = serializer.Serialize(Deployment);
+
+        //await _yamlEditor.SetValue(yaml);
+        StateHasChanged();
+    }
+
+
+    //private static IEnumerable<KNode> NodesList { get; set; }
+
+
+    public async Task MatchPods(MudChip SelectedLabel)
+    {
+        if (SelectedLabel != null && SelectedLabel.Text != null)
+        {
+            var pods = await KubernetesService.GetPods("default");
+            PodList = pods.Items.Where(a => a.Metadata.Labels.Any(b => CheckLabel(b.Key, b.Value, SelectedLabel.Text.Split("|")[0], SelectedLabel.Text.Split("|")[1]))).ToList();
+        }
+    }
+
+
+    private bool CheckLabel(string plname, string plvalue, string dlname, string dlvalue)
+    {
+        if (plname.Equals(dlname) && plvalue.Equals(dlvalue))
+            return true;
+        else
+            return false;
+    }
+    public void Dispose()
+    {
+        PodList = null;
+    }
+
+}

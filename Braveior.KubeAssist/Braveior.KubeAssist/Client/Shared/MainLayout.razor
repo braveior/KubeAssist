@@ -1,0 +1,129 @@
+﻿@inherits LayoutComponentBase
+@inject IKubernetesService KubernetesService
+<MudThemeProvider Theme="currentTheme" />
+<MudDialogProvider />
+<MudSnackbarProvider />
+<MudLayout>
+    <MudAppBar Style="@($"color:{currentTheme.Palette.AppbarText}; background:{currentTheme.Palette.Background};")" Elevation="1">
+        <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Surface" Edge="Edge.Start" OnClick="@ToggleDrawer" />
+        <img align="left" src="images/kubeassist_logo_t.png" />
+        <MudAppBarSpacer />
+
+        <MudSelect T="string" @bind-Value="SelectedNamespace" Label="Select Namespace" Variant="Variant.Text">
+            @if (Namespaces.Items != null)
+            {
+                @foreach (var item in Namespaces.Items)
+                {
+                    <MudSelectItem Value="@item.Metadata.Name">@item.Metadata.Name</MudSelectItem>
+                }
+            }
+        </MudSelect>
+
+        <MudButton OnClick="@((e) => DarkMode())" Color="Color.Primary" Variant="Variant.Filled">Toggle Dark/Light Mode</MudButton>
+    </MudAppBar>
+    <MudDrawer @bind-Open="@open" ClipMode="DrawerClipMode.Always" Elevation="1">
+        <MudDrawerHeader>
+            <MudText Typo="Typo.h6">Menu</MudText>
+        </MudDrawerHeader>
+        <MudNavMenu>
+            <MudNavLink Href="/dashboard">Dashboard</MudNavLink>
+            <MudNavGroup Title="Cluster">
+                <MudNavLink Href="/nodes">Nodes</MudNavLink>
+                <MudNavLink Href="/pvs">Persistent Volumes</MudNavLink>
+                <MudNavLink Href="/scs">Storage Classes</MudNavLink>
+            </MudNavGroup>
+            <MudNavGroup Title="Namespace">
+                <MudText Typo="Typo.body2" Class="px-4 mud-text-secondary">@SelectedNamespace</MudText>
+                <MudNavLink Href="/deps">Deployments</MudNavLink>
+                <MudNavLink Href="/statefulsets">Stateful Sets</MudNavLink>
+                <MudNavLink Href="/pods">Pods</MudNavLink>
+                <MudNavLink Href="/services">Services</MudNavLink>
+                <MudNavLink Href="/pvcs">Persistent Volume Claims</MudNavLink>
+                <MudNavLink Href="/configmaps">Config Maps</MudNavLink>
+            </MudNavGroup>
+        </MudNavMenu>
+    </MudDrawer>
+    <MudMainContent Class="pt-16 px-16">
+        <MudContainer Class="mt-6">
+            @Body
+        </MudContainer>
+    </MudMainContent>
+</MudLayout>
+
+@code{
+    bool open = true;
+    private string _selectedNamespace { get; set; } = "default";
+
+    private string SelectedNamespace { get { return _selectedNamespace; } set { _selectedNamespace = value; Dispatcher.Dispatch(new GlobalDataFetchDataAction(value)); } }
+
+    private bool IsDarkMode { get; set; } = false;
+
+    private V1NamespaceList Namespaces = new V1NamespaceList();
+
+
+    [Inject]
+    private IDispatcher Dispatcher { get; set; }
+
+
+    protected override async Task OnInitializedAsync()
+    {
+
+        currentTheme = defaultTheme;
+        await LoadNamespaces();
+        await base.OnInitializedAsync();
+    }
+    async Task LoadNamespaces()
+    {
+        Namespaces = await KubernetesService.GetNamespaces();
+    }
+    void ToggleDrawer()
+    {
+        open = !open;
+    }
+    void DarkMode()
+    {
+        if (currentTheme == defaultTheme)
+        {
+            currentTheme = darkTheme;
+        }
+        else
+        {
+            currentTheme = defaultTheme;
+        }
+    }
+    MudTheme currentTheme = new MudTheme();
+    MudTheme defaultTheme = new MudTheme()
+    {
+        Palette = new Palette()
+        {
+            Black = "#272c34"
+        }
+    };
+    MudTheme darkTheme = new MudTheme()
+    {
+        Palette = new Palette()
+        {
+            Black = "#27272f",
+            Background = "#32333d",
+            BackgroundGrey = "#27272f",
+            Surface = "#373740",
+            DrawerBackground = "#27272f",
+            DrawerText = "rgba(255,255,255, 0.50)",
+            DrawerIcon = "rgba(255,255,255, 0.50)",
+            AppbarBackground = "#27272f",
+            AppbarText = "rgba(255,255,255, 0.70)",
+            TextPrimary = "rgba(255,255,255, 0.70)",
+            TextSecondary = "rgba(255,255,255, 0.50)",
+            ActionDefault = "#adadb1",
+            ActionDisabled = "rgba(255,255,255, 0.26)",
+            ActionDisabledBackground = "rgba(255,255,255, 0.12)",
+            Divider = "rgba(255,255,255, 0.12)",
+            DividerLight = "rgba(255,255,255, 0.06)",
+            TableLines = "rgba(255,255,255, 0.12)",
+            LinesDefault = "rgba(255,255,255, 0.12)",
+            LinesInputs = "rgba(255,255,255, 0.3)",
+            TextDisabled = "rgba(255,255,255, 0.2)"
+        }
+    };
+
+}

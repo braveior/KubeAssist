@@ -20,10 +20,10 @@ namespace Braveior.KubeAssist.Client
             var builder = WebAssemblyHostBuilder.CreateDefault(args);
             builder.RootComponents.Add<App>("#app");
 
-            builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri(builder.HostEnvironment.BaseAddress) });
+           
             //Adds the dependency injection for the LoginService and Singleton instance for HttpClient
-            builder.Services.AddSingleton<HttpClient>();
-            builder.Services.AddHttpClient<IKubernetesService, KubernetesService>();
+
+            builder.Services.AddHttpClient<IKubernetesService, KubernetesService>(sp => { sp.BaseAddress = new Uri(builder.HostEnvironment.BaseAddress); });
 
             //Adds the Mud Blazor support to Blazor
             builder.Services.AddMudServices();
